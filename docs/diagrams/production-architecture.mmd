@@ -1,0 +1,92 @@
+%%{ init: { 'theme': 'base', 'themeVariables': { 'primaryColor': '#E8EAF6', 'primaryTextColor': '#1A237E', 'primaryBorderColor': '#3F51B5', 'lineColor': '#5C6BC0', 'secondaryColor': '#FFF3E0', 'tertiaryColor': '#E0F2F1' } } }%%
+graph TB
+    subgraph USERS["Customers"]
+        U1["Web / Mobile Users"]
+        U2["EORS / BFF Flash-Sale Traffic<br/>15–20× normal load"]
+    end
+
+    subgraph AZURE_CLOUD["Microsoft Azure Cloud — Multi-Region"]
+        subgraph LB_TIER["Traffic Management"]
+            LB["Azure Load Balancer /<br/>Traffic Manager"]
+        end
+
+        subgraph APP_TIER["Application & Business Services"]
+            API["API Gateway"]
+            PS["Product Service"]
+            CS["Cart & Order Service"]
+            US["User Service"]
+            SEARCH["Search Service"]
+        end
+
+        subgraph PRICING_TIER["Pricing & Discount Architecture"]
+            DFS["Discount Fulfilment<br/>Service"]
+            REDIS[("Redis Cluster<br/>Read Balancing")]
+            MONGO[("MongoDB<br/>Fallback Store")]
+            DFS --- |"~30 ms latency"| REDIS
+            DFS --- MONGO
+        end
+
+        subgraph DATA_INGESTION["Event Ingestion Layer"]
+            SRC["Sourcerer<br/>CDC Ingestion"]
+            DBZ["Debezium<br/>Change Data Capture"]
+            KAFKA[("Apache Kafka<br/>~4M events/min")]
+            DBZ --> SRC
+            SRC --> KAFKA
+        end
+
+        subgraph PROCESSING["Data Processing Layer"]
+            QS["Quicksilver<br/>Near-Real-Time<br/>Processing"]
+            JANUS["Janus<br/>Data Quality /<br/>Validation"]
+            KAFKA --> QS
+            KAFKA --> JANUS
+        end
+
+        subgraph LAKEHOUSE["Data Lakehouse"]
+            BIFROST["Bifrost<br/>Unified Lakehouse<br/>2.5 PB/day serving"]
+            QS --> BIFROST
+            JANUS --> BIFROST
+        end
+
+        subgraph ML_PERSONALIZATION["Personalization & ML"]
+            FS["Feature Store<br/>Online + Offline"]
+            AERO[("Aerospike<br/>0.8 ms lookup<br/>500K ops/sec")]
+            REC["Recommendation<br/>Engine / ML Models"]
+            BIFROST --> FS
+            FS --- AERO
+            FS --> REC
+        end
+
+        subgraph DR["Disaster Recovery"]
+            R1["Primary Region"]
+            R2["Secondary Region<br/>Replicated Data"]
+            R1 -.->|"Replication"| R2
+        end
+    end
+
+    U1 --> LB
+    U2 --> LB
+    LB --> API
+    API --> PS
+    API --> CS
+    API --> US
+    API --> SEARCH
+    PS --> DFS
+    REC -->|"Personalized<br/>Recommendations"| API
+    CS -->|"Clickstream &<br/>User Events"| KAFKA
+    API -->|"Request Events"| KAFKA
+    BIFROST -->|"Analytics &<br/>Reporting"| PS
+
+    classDef users fill:#FFEBEE,stroke:#C62828,color:#B71C1C
+    classDef azure fill:#E3F2FD,stroke:#1565C0,color:#0D47A1
+    classDef cache fill:#FFF3E0,stroke:#EF6C00,color:#E65100
+    classDef kafka fill:#E8F5E9,stroke:#2E7D32,color:#1B5E20
+    classDef ml fill:#F3E5F5,stroke:#7B1FA2,color:#4A148C
+    classDef dr fill:#ECEFF1,stroke:#546E7A,color:#263238
+
+    class U1,U2 users
+    class LB,API,PS,CS,US,SEARCH azure
+    class DFS,REDIS,MONGO cache
+    class SRC,DBZ,KAFKA,QS,JANUS kafka
+    class BIFROST,FS,AERO,REC ml
+    class R1,R2 dr
+

@@ -1,0 +1,94 @@
+%%{ init: { 'theme': 'base', 'themeVariables': { 'primaryColor': '#E3F2FD', 'primaryTextColor': '#0D47A1', 'primaryBorderColor': '#1976D2', 'lineColor': '#42A5F5' } } }%%
+graph TB
+    subgraph LOADTEST["Load Testing"]
+        K6["Grafana k6<br/>Load Generator"]
+        K6_STAGES["Stages:<br/>1. Ramp-up 0→100 VUs<br/>2. Sustained 100 VUs<br/>3. Spike to 500 VUs<br/>4. Ramp-down"]
+    end
+
+    subgraph AZURE["Microsoft Azure — Central India Region"]
+        subgraph NETWORKING["Network Layer"]
+            ALB["Azure Standard<br/>Load Balancer"]
+            HP["Health Probes<br/>HTTP /health<br/>every 15s"]
+        end
+
+        subgraph VMSS_GROUP["Azure VM Scale Set"]
+            direction LR
+            subgraph VM1["VM Instance 1"]
+                D1["Docker Container<br/>MyntraFlash App<br/>Node.js + Express"]
+            end
+            subgraph VM2["VM Instance 2"]
+                D2["Docker Container<br/>MyntraFlash App<br/>Node.js + Express"]
+            end
+            subgraph VM3["VM Instance 3<br/>(autoscaled)"]
+                D3["Docker Container<br/>MyntraFlash App<br/>Node.js + Express"]
+            end
+        end
+
+        subgraph AUTOSCALE["Azure Monitor Autoscale"]
+            RULES["Autoscale Rules"]
+            SO["Scale-Out:<br/>CPU > 70% for 5 min<br/>Add 1 instance"]
+            SI["Scale-In:<br/>CPU < 30% for 5 min<br/>Remove 1 instance"]
+            COOL["Cooldown: 5 min<br/>Min: 1 VM | Max: 3 VMs"]
+            RULES --- SO
+            RULES --- SI
+            RULES --- COOL
+        end
+
+        subgraph MONITOR["Monitoring & Metrics"]
+            AM["Azure Monitor"]
+            METRICS["Metrics Collected:<br/>• CPU Utilization<br/>• Memory Usage<br/>• Request Count<br/>• Response Time"]
+        end
+
+        subgraph REGISTRY["Container Registry"]
+            GHCR["GitHub Container<br/>Registry (ghcr.io)"]
+        end
+    end
+
+    subgraph APP_ENDPOINTS["MyntraFlash Application Endpoints"]
+        direction LR
+        E1["GET /products<br/>Product Catalogue"]
+        E2["GET /flash-sale<br/>Flash Sale Items"]
+        E3["GET /api/discount<br/>Discount API"]
+        E4["GET /api/recommend<br/>Recommendations"]
+        E5["GET /health<br/>Health Check"]
+        E6["GET /instance-id<br/>Instance Info"]
+    end
+
+    K6 -->|"HTTP Requests"| ALB
+    ALB -->|"Distribute"| VM1
+    ALB -->|"Distribute"| VM2
+    ALB -->|"Distribute"| VM3
+    HP -->|"Check"| D1
+    HP -->|"Check"| D2
+    HP -->|"Check"| D3
+    ALB --- HP
+    GHCR -->|"Pull Image"| VM1
+    GHCR -->|"Pull Image"| VM2
+    GHCR -->|"Pull Image"| VM3
+    AM -->|"CPU Metrics"| RULES
+    VM1 -->|"Telemetry"| AM
+    VM2 -->|"Telemetry"| AM
+    VM3 -->|"Telemetry"| AM
+    D1 --- E1
+    D1 --- E2
+    D1 --- E3
+    D1 --- E4
+    D1 --- E5
+    D1 --- E6
+
+    classDef loadtest fill:#FFF9C4,stroke:#F9A825,color:#F57F17
+    classDef lb fill:#BBDEFB,stroke:#1976D2,color:#0D47A1
+    classDef vm fill:#C8E6C9,stroke:#388E3C,color:#1B5E20
+    classDef autoscale fill:#FFCCBC,stroke:#E64A19,color:#BF360C
+    classDef monitor fill:#D1C4E9,stroke:#512DA8,color:#311B92
+    classDef registry fill:#B2EBF2,stroke:#00838F,color:#006064
+    classDef endpoints fill:#F5F5F5,stroke:#616161,color:#212121
+
+    class K6,K6_STAGES loadtest
+    class ALB,HP lb
+    class VM1,VM2,VM3,D1,D2,D3 vm
+    class RULES,SO,SI,COOL autoscale
+    class AM,METRICS monitor
+    class GHCR registry
+    class E1,E2,E3,E4,E5,E6 endpoints
+
