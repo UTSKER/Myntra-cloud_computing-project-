@@ -1,45 +1,45 @@
-%%{ init: { 'theme': 'base', 'themeVariables': { 'primaryColor': '#E3F2FD', 'primaryTextColor': '#0D47A1', 'primaryBorderColor': '#1976D2', 'lineColor': '#42A5F5' } } }%%
+%%{ init: { 'theme': 'base', 'themeVariables': { 'primaryColor': '#E8F0FE', 'primaryTextColor': '#1A73E8', 'primaryBorderColor': '#1967D2', 'lineColor': '#4285F4' } } }%%
 graph TB
-    subgraph LOADTEST["Load Testing"]
+    subgraph LOADTEST["Load Testing Tier"]
         K6["Grafana k6<br/>Load Generator"]
-        K6_STAGES["Stages:<br/>1. Ramp-up 0→100 VUs<br/>2. Sustained 100 VUs<br/>3. Spike to 500 VUs<br/>4. Ramp-down"]
+        K6_STAGES["Execution Stages:<br/>1. Warmup: 20 VUs (1m)<br/>2. Flash Surge: 150 VUs (30s)<br/>3. Sustained Peak: 150 VUs (5m)<br/>4. Flash Spike: 500 VUs (2m)<br/>5. Cooldown: 20 VUs (5m)"]
     end
 
-    subgraph AZURE["Microsoft Azure — Central India Region"]
-        subgraph NETWORKING["Network Layer"]
-            ALB["Azure Standard<br/>Load Balancer"]
-            HP["Health Probes<br/>HTTP /health<br/>every 15s"]
+    subgraph GCP["Google Cloud Platform (GCP) — asia-south1 (Mumbai) Region"]
+        subgraph NETWORKING["Traffic Management Layer"]
+            GCLB["Google Cloud Load Balancing<br/>(External Application Load Balancer)"]
+            HC["HTTP Health Check<br/>GET /health:3000<br/>Interval: 15s | Threshold: 2"]
         end
 
-        subgraph VMSS_GROUP["Azure VM Scale Set"]
+        subgraph MIG_GROUP["Compute Engine Managed Instance Group (MIG)"]
             direction LR
-            subgraph VM1["VM Instance 1"]
+            subgraph VM1["GCE VM 1 (e2-medium)"]
                 D1["Docker Container<br/>MyntraFlash App<br/>Node.js + Express"]
             end
-            subgraph VM2["VM Instance 2"]
+            subgraph VM2["GCE VM 2 (e2-medium)"]
                 D2["Docker Container<br/>MyntraFlash App<br/>Node.js + Express"]
             end
-            subgraph VM3["VM Instance 3<br/>(autoscaled)"]
+            subgraph VM3["GCE VM 3 (e2-medium)<br/>(Autoscaled)"]
                 D3["Docker Container<br/>MyntraFlash App<br/>Node.js + Express"]
             end
         end
 
-        subgraph AUTOSCALE["Azure Monitor Autoscale"]
-            RULES["Autoscale Rules"]
-            SO["Scale-Out:<br/>CPU > 70% for 5 min<br/>Add 1 instance"]
-            SI["Scale-In:<br/>CPU < 30% for 5 min<br/>Remove 1 instance"]
-            COOL["Cooldown: 5 min<br/>Min: 1 VM | Max: 3 VMs"]
+        subgraph AUTOSCALE["Compute Engine MIG Autoscaler"]
+            RULES["Autoscaling Policy"]
+            SO["Scale-Out Trigger:<br/>Fleet Avg CPU > 70%<br/>Add 1 Instance"]
+            SI["Scale-In Control:<br/>Fleet Avg CPU < 30%<br/>Remove 1 Instance"]
+            COOL["Cool-Down Period: 300s (5m)<br/>Min: 1 Instance | Max: 3 Instances"]
             RULES --- SO
             RULES --- SI
             RULES --- COOL
         end
 
-        subgraph MONITOR["Monitoring & Metrics"]
-            AM["Azure Monitor"]
-            METRICS["Metrics Collected:<br/>• CPU Utilization<br/>• Memory Usage<br/>• Request Count<br/>• Response Time"]
+        subgraph MONITOR["Cloud Observability Layer"]
+            GCM["Google Cloud Monitoring<br/>& Cloud Logging"]
+            METRICS["Platform Telemetry:<br/>• compute/instance/cpu/utilization<br/>• loadbalancing/https/request_count<br/>• loadbalancing/https/total_latencies"]
         end
 
-        subgraph REGISTRY["Container Registry"]
+        subgraph REGISTRY["Artifact Registry"]
             GHCR["GitHub Container<br/>Registry (ghcr.io)"]
         end
     end
@@ -48,27 +48,27 @@ graph TB
         direction LR
         E1["GET /products<br/>Product Catalogue"]
         E2["GET /flash-sale<br/>Flash Sale Items"]
-        E3["GET /api/discount<br/>Discount API"]
-        E4["GET /api/recommend<br/>Recommendations"]
-        E5["GET /health<br/>Health Check"]
-        E6["GET /instance-id<br/>Instance Info"]
+        E3["GET /api/discount<br/>Discount Pricing API"]
+        E4["GET /api/recommend<br/>Recommendations API"]
+        E5["GET /health<br/>Health Check Probe"]
+        E6["GET /instance-id<br/>Node Metadata"]
     end
 
-    K6 -->|"HTTP Requests"| ALB
-    ALB -->|"Distribute"| VM1
-    ALB -->|"Distribute"| VM2
-    ALB -->|"Distribute"| VM3
-    HP -->|"Check"| D1
-    HP -->|"Check"| D2
-    HP -->|"Check"| D3
-    ALB --- HP
-    GHCR -->|"Pull Image"| VM1
-    GHCR -->|"Pull Image"| VM2
-    GHCR -->|"Pull Image"| VM3
-    AM -->|"CPU Metrics"| RULES
-    VM1 -->|"Telemetry"| AM
-    VM2 -->|"Telemetry"| AM
-    VM3 -->|"Telemetry"| AM
+    K6 -->|"Synthetic HTTP Requests"| GCLB
+    GCLB -->|"Round-Robin Distribution"| VM1
+    GCLB -->|"Round-Robin Distribution"| VM2
+    GCLB -->|"Round-Robin Distribution"| VM3
+    HC -->|"Poll Vitality"| D1
+    HC -->|"Poll Vitality"| D2
+    HC -->|"Poll Vitality"| D3
+    GCLB --- HC
+    GHCR -->|"Docker Pull via Startup Script"| VM1
+    GHCR -->|"Docker Pull via Startup Script"| VM2
+    GHCR -->|"Docker Pull via Startup Script"| VM3
+    GCM -->|"Target Metric Signal"| RULES
+    VM1 -->|"Export Telemetry"| GCM
+    VM2 -->|"Export Telemetry"| GCM
+    VM3 -->|"Export Telemetry"| GCM
     D1 --- E1
     D1 --- E2
     D1 --- E3
@@ -77,18 +77,17 @@ graph TB
     D1 --- E6
 
     classDef loadtest fill:#FFF9C4,stroke:#F9A825,color:#F57F17
-    classDef lb fill:#BBDEFB,stroke:#1976D2,color:#0D47A1
-    classDef vm fill:#C8E6C9,stroke:#388E3C,color:#1B5E20
-    classDef autoscale fill:#FFCCBC,stroke:#E64A19,color:#BF360C
-    classDef monitor fill:#D1C4E9,stroke:#512DA8,color:#311B92
-    classDef registry fill:#B2EBF2,stroke:#00838F,color:#006064
-    classDef endpoints fill:#F5F5F5,stroke:#616161,color:#212121
+    classDef lb fill:#E8F0FE,stroke:#1A73E8,color:#0D47A1
+    classDef vm fill:#E6F4EA,stroke:#137333,color:#0D652D
+    classDef autoscale fill:#FCE8E6,stroke:#C5221F,color:#B31412
+    classDef monitor fill:#F3E8FD,stroke:#7627BB,color:#5A1A9A
+    classDef registry fill:#E0F7FA,stroke:#00838F,color:#006064
+    classDef endpoints fill:#F8F9FA,stroke:#5F6368,color:#202124
 
     class K6,K6_STAGES loadtest
-    class ALB,HP lb
+    class GCLB,HC lb
     class VM1,VM2,VM3,D1,D2,D3 vm
     class RULES,SO,SI,COOL autoscale
-    class AM,METRICS monitor
+    class GCM,METRICS monitor
     class GHCR registry
     class E1,E2,E3,E4,E5,E6 endpoints
-

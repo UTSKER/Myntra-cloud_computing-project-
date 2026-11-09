@@ -31,17 +31,27 @@
 
 ---
 
-## Azure Technical Documentation
+## Google Cloud Platform (GCP) Technical Documentation
+
+| ID | Citation | URL |
+|----|----------|-----|
+| [G1] | Google Cloud, "Compute Engine Managed Instance Groups (MIGs) Overview" | https://cloud.google.com/compute/docs/instance-groups |
+| [G2] | Google Cloud, "Autoscaling Groups of Instances" | https://cloud.google.com/compute/docs/autoscaler |
+| [G3] | Google Cloud, "Cloud Load Balancing Overview" | https://cloud.google.com/load-balancing/docs/load-balancing-overview |
+| [G4] | Google Cloud, "Health Checks Overview for Compute Engine" | https://cloud.google.com/load-balancing/docs/health-checks |
+| [G5] | Google Cloud, "Google Cloud Pricing Calculator (Compute Engine & Network Tiers)" | https://cloud.google.com/products/calculator |
+| [G6] | Google Cloud, "Google Cloud Free Program ($300 Credit & Always Free Terms)" | https://cloud.google.com/free/docs/free-cloud-features |
+| [G7] | Google Cloud, "Cloud Monitoring Metrics & Alerting Policies" | https://cloud.google.com/monitoring/docs |
+
+---
+
+## Azure Technical Documentation (Myntra Case Study Context)
 
 | ID | Citation | URL |
 |----|----------|-----|
 | [A1] | Microsoft Learn, "Azure Virtual Machine Scale Sets Overview" | https://learn.microsoft.com/en-us/azure/virtual-machine-scale-sets/overview |
 | [A2] | Microsoft Learn, "Azure Monitor Autoscale Overview" | https://learn.microsoft.com/en-us/azure/azure-monitor/autoscale/autoscale-overview |
 | [A3] | Microsoft Learn, "Azure Standard Load Balancer Overview" | https://learn.microsoft.com/en-us/azure/load-balancer/load-balancer-overview |
-| [A4] | Microsoft Learn, "Azure VM Scale Sets — Automatic Instance Repairs" | https://learn.microsoft.com/en-us/azure/virtual-machine-scale-sets/virtual-machine-scale-sets-automatic-instance-repairs |
-| [A5] | Microsoft Learn, "Azure Load Balancer Health Probes" | https://learn.microsoft.com/en-us/azure/load-balancer/load-balancer-custom-probe-overview |
-| [A6] | Microsoft Azure, "Pricing Calculator" | https://azure.microsoft.com/en-us/pricing/calculator/ |
-| [A7] | Microsoft Learn, "Azure Load Balancer Distribution Mode" | https://learn.microsoft.com/en-us/azure/load-balancer/load-balancer-distribution-mode-how-to |
 
 ---
 
@@ -65,12 +75,7 @@
 
 ## Notes on Source Reliability
 
-1. **Myntra Engineering blog posts** [P1]–[P4] are first-party technical publications by Myntra's engineering teams. They describe internal systems and are considered primary sources.
-
-2. **Vendor case studies** [V1]–[V3] are published by Myntra's technology partners (Microsoft, Aerospike, Databricks). While generally reliable, they serve a marketing purpose and may emphasize favourable outcomes.
-
-3. **Azure documentation** [A1]–[A7] is official Microsoft technical documentation for the Azure services used in our proposed architecture.
-
-4. All metrics cited in this project are attributed to their original source with publication dates. Metrics from different years and workloads are **not** combined or presented as simultaneous measurements.
-
-5. Where a specific claim could not be independently verified, it is qualified with the source attribution and context in which it was reported.
+1. **Myntra Engineering blog posts** [P1]–[P8] are first-party technical publications by Myntra's engineering teams. They describe internal systems and are considered primary sources.
+2. **Vendor case studies** [V1]–[V3] are published by Myntra's technology partners (Microsoft, Aerospike, Databricks). While generally reliable, they serve a marketing purpose and are evaluated within their specific workload contexts.
+3. **Google Cloud documentation** [G1]–[G7] represents official technical documentation for the GCP services utilized in our laboratory deployment (MIG, Cloud Load Balancing, Autoscaling, Cloud Monitoring).
+4. **Attribution & Transparency**: While Myntra migrated its enterprise workloads to Microsoft Azure [V1], our university practical exercise implements Google Cloud Platform (`asia-south1`) to leverage GCP's accessible $300 free trial with zero auto-charge protection, ensuring students can execute all 5 scaling experiments at zero out-of-pocket cost.

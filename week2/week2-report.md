@@ -357,42 +357,48 @@ Myntra's DR architecture protects against:
 
 ---
 
-## Page 7 — Proposed Solution: MyntraFlash
+## Page 7 — Proposed Solution: MyntraFlash (Google Cloud Platform)
 
 ### 7.1 Application Overview
 
 **MyntraFlash** is a scaled-down e-commerce simulation inspired by Myntra, designed to demonstrate cloud-scaling principles in the Week 3 practical exercise.
 
+Following an evaluation of cloud student offerings, the practical implementation utilizes **Google Cloud Platform (GCP)** in the `asia-south1` (Mumbai) region. GCP provides **$300 USD in free trial credits over 90 days** with a strict **zero auto-charge guarantee**, accessible to any standard developer account without requiring institutional college email verification, while faithfully replicating all enterprise cloud elasticity mechanisms.
+
 ### 7.2 Technology Stack
 
-| Component | Technology | Justification |
-|-----------|------------|---------------|
-| Cloud Provider | Microsoft Azure | Aligns with Myntra's platform [V1] |
-| Backend | Node.js + Express | Lightweight, stateless HTTP services |
-| Frontend | HTML, CSS, JavaScript | Simple, no build tools required |
-| Containerization | Docker | Consistent deployment across VMs |
-| Infrastructure | Azure VM Scale Set | Managed autoscaling VM pool |
-| Load Balancing | Azure Standard Load Balancer | Layer-4 distribution with health probes |
-| Autoscaling | Azure Monitor Autoscale | CPU-based scaling rules |
-| Load Testing | Grafana k6 | Scriptable, open-source load generator |
+| Component | Technology | Justification & Architectural Role |
+|-----------|------------|-----------------------------------|
+| Cloud Provider | Google Cloud Platform (GCP) | $300 free trial credits (90 days); zero auto-charge guarantee; no college email restriction |
+| Cloud Region | `asia-south1` (Mumbai, India) | Local Indian region minimizing network latency during client load testing |
+| Backend | Node.js + Express | Lightweight, event-driven, suitable for stateless HTTP microservices |
+| Frontend | HTML, CSS, JavaScript | Responsive single-page interface; zero client build tooling needed |
+| Containerization | Docker Engine (Ubuntu 22.04 LTS) | Guarantees runtime parity between local testing and cloud instances |
+| Compute Infrastructure | GCE Managed Instance Groups (MIG) | Regional/Zonal managed pool of identical compute instances (GCP equivalent to Azure VMSS) |
+| Machine Sizing | `e2-medium` (2 vCPU, 4 GB RAM) | Balanced, cost-effective general-purpose compute |
+| Load Balancing | Google Cloud Load Balancing | External Application Load Balancer with HTTP health checks (`/health`) |
+| Autoscaling | Compute Engine MIG Autoscaler | CPU-based scaling rules (Scale-out > 70%, Scale-in < 30%, 300s cool-down) |
+| Cloud Telemetry | Google Cloud Monitoring & Logging | Native platform metrics capturing CPU utilization, request count, and latency |
+| Load Testing | Grafana k6 | Scriptable, open-source load testing tool generating staged flash-sale traffic curves |
+| Container Registry | GitHub Container Registry (`ghcr.io`) | OCI-compliant container image registry |
 
 ### 7.3 Application Endpoints
 
 | Endpoint | Purpose |
 |----------|---------|
-| `GET /products` | Product catalogue |
-| `GET /flash-sale` | Flash-sale items with countdown |
-| `GET /api/discount` | Discount calculations (simulated compute) |
-| `GET /api/recommend` | Recommendations (simulated ML inference) |
-| `GET /health` | Health check for load balancer probes |
-| `GET /instance-id` | Instance identification for distribution verification |
+| `GET /products` | Product catalogue browsing (simulates product service) |
+| `GET /flash-sale` | Flash-sale items with countdown (high-velocity traffic endpoint) |
+| `GET /api/discount` | Discount calculations (simulates CPU-intensive pricing rule execution) |
+| `GET /api/recommend` | Recommendations (simulates ML inference latency delay) |
+| `GET /health` | Health check probe (`HTTP 200 OK`) for load balancer vitality checks |
+| `GET /instance-id` | Instance identification for load-balancing round-robin verification |
 
 ### 7.4 Why Stateless Design
 
 The application is completely stateless — no server-side sessions, no local file state, no shared mutable state. This enables:
 
 - **Round-robin load balancing** (no session affinity needed).
-- **Instant instance utility** (new VMs serve traffic immediately).
+- **Instant instance utility** (new VMs serve traffic immediately upon `/health` 200 OK).
 - **Safe scale-in** (removing instances loses no user state).
 - **Simple fault tolerance** (any instance can handle any request).
 
@@ -400,17 +406,17 @@ The application is completely stateless — no server-side sessions, no local fi
 
 ```mermaid
 graph TB
-    K6["Grafana k6 Load Generator"] --> ALB["Azure Standard Load Balancer"]
-    ALB --> VM1["VM 1 — Docker: MyntraFlash"]
-    ALB --> VM2["VM 2 — Docker: MyntraFlash"]
-    ALB --> VM3["VM 3 — Docker: MyntraFlash (autoscaled)"]
-    HP["Health Probes /health"] --> VM1
-    HP --> VM2
-    HP --> VM3
-    AM["Azure Monitor"] --> RULES["Autoscale Rules"]
-    VM1 --> AM
-    VM2 --> AM
-    VM3 --> AM
+    K6["Grafana k6 Load Generator"] --> GCLB["Google Cloud Load Balancing (External App LB)"]
+    GCLB --> VM1["GCE VM 1 (e2-medium) — Docker: MyntraFlash"]
+    GCLB --> VM2["GCE VM 2 (e2-medium) — Docker: MyntraFlash"]
+    GCLB --> VM3["GCE VM 3 (e2-medium) — Docker: MyntraFlash (autoscaled)"]
+    HC["HTTP Health Check /health"] --> VM1
+    HC --> VM2
+    HC --> VM3
+    GCM["Google Cloud Monitoring"] --> RULES["MIG Autoscaler Rules"]
+    VM1 --> GCM
+    VM2 --> GCM
+    VM3 --> GCM
     GHCR["GitHub Container Registry"] --> VM1
     GHCR --> VM2
     GHCR --> VM3
@@ -418,18 +424,20 @@ graph TB
 
 *Mermaid source: `week2/diagrams/proposed-architecture.mmd`*
 
-### 7.6 Azure Infrastructure Configuration
+### 7.6 GCP Infrastructure Configuration
 
 | Resource | Configuration |
 |----------|--------------|
-| VM Size | Standard_B2s (2 vCPU, 4 GB RAM) |
-| OS | Ubuntu 22.04 LTS |
-| VMSS min/max | 1 / 3 instances |
-| Scale-out | CPU > 70% for 5 min → +1 instance |
-| Scale-in | CPU < 30% for 5 min → −1 instance |
-| Cooldown | 5 minutes |
-| Health probe | HTTP GET /health, 15s interval, 2-failure threshold |
-| Load balancer | Standard SKU, TCP port 80 → port 3000 |
+| Project ID | `myntraflash-cloud-exercise` |
+| Region / Zone | `asia-south1` (Mumbai) / `asia-south1-a` |
+| Machine Type | `e2-medium` (2 vCPU, 4 GB RAM, 30 GB standard persistent disk) |
+| OS Image | Ubuntu 22.04 LTS Minimal (`ubuntu-os-cloud/ubuntu-2204-lts`) |
+| MIG min/max | 1 / 3 instances |
+| Scale-out rule | Fleet Average CPU > 70% sustained 5 min → +1 instance |
+| Scale-in rule | Fleet Average CPU < 30% sustained 5 min → −1 instance |
+| Cool-down period | 300 seconds (5 minutes) |
+| Health check probe | HTTP `GET /health` on port 80, 15s interval, 2-failure threshold |
+| Load balancer | Regional External Application Load Balancer, TCP port 80 → backend service |
 
 ---
 
@@ -439,66 +447,66 @@ graph TB
 
 | # | Experiment | Objective | Course Requirement |
 |---|-----------|-----------|-------------------|
-| 1 | Baseline performance | Establish single-VM performance metrics | Latency |
-| 2 | Horizontal scaling | Compare 1, 2, 3 VMs under identical load | Scaling behaviour |
-| 3 | Autoscaling | Observe CPU-triggered scale-out and scale-in | Scaling behaviour |
-| 4 | Fault tolerance | Verify traffic rerouting on instance failure | Resilience |
-| 5 | Cost analysis | Compare fixed vs. elastic provisioning costs | Cost |
+| 1 | Baseline performance | Establish single-VM performance metrics (`e2-medium`) | Latency |
+| 2 | Horizontal scaling | Compare 1 vs. 2 vs. 3 GCE VMs under identical 100-VU load | Scaling behaviour |
+| 3 | Autoscaling dynamics | Observe CPU-triggered scale-out, scale-in, and cool-down | Scaling behaviour |
+| 4 | Fault tolerance | Verify automated health probe detection and traffic rerouting | Resilience |
+| 5 | Cost analysis | Compare fixed vs. elastic provisioning costs on GCP | Cost |
 
 ### 8.2 Experiment 1 — Baseline
 
-Deploy with 1 VM (autoscaling disabled). Run k6 with 50 VUs for 5 minutes.
+Deploy with 1 GCE VM (`e2-medium`, autoscaling disabled). Run k6 with 50 VUs for 5 minutes.
 
-| Metric | 1 VM (Baseline) |
-|--------|-----------------|
-| Avg response time | *to be measured* |
-| p50 / p95 / p99 latency | *to be measured* |
-| Requests/sec | *to be measured* |
-| Error rate | *to be measured* |
-| CPU utilization | *to be measured* |
+| Metric | 1 GCE VM (Baseline) |
+|--------|---------------------|
+| Avg response time | *to be measured in Week 3* |
+| p50 / p95 / p99 latency | *to be measured in Week 3* |
+| Requests/sec | *to be measured in Week 3* |
+| Error rate (%) | *to be measured in Week 3* |
+| CPU utilization (%) | *to be measured in Week 3* |
 
 ### 8.3 Experiment 2 — Horizontal Scaling
 
-Run identical load (100 VUs, 5 min) against 1, 2 and 3 VMs. Same image, VM size, region, endpoint mix.
+Run identical load (100 VUs, 5 min) against 1, 2 and 3 GCE VMs. Same container image, machine size, region (`asia-south1`), and endpoint mix.
 
-| Metric | 1 VM | 2 VMs | 3 VMs |
-|--------|------|-------|-------|
+| Metric | 1 GCE VM | 2 GCE VMs | 3 GCE VMs |
+|--------|----------|-----------|-----------|
 | Avg response time | *measured* | *measured* | *measured* |
 | p95 latency | *measured* | *measured* | *measured* |
 | Requests/sec | *measured* | *measured* | *measured* |
-| Error rate | *measured* | *measured* | *measured* |
-| CPU util. | *measured* | *measured* | *measured* |
+| Error rate (%) | *measured* | *measured* | *measured* |
+| Fleet CPU util. (%) | *measured* | *measured* | *measured* |
 
-**Expected:** Latency decreases and throughput increases approximately linearly with instance count.
+**Expected:** Tail latency (p95/p99) decreases and throughput increases approximately linearly as instance capacity expands from 1 to 3 VMs.
 
-### 8.4 Experiment 3 — Autoscaling
+### 8.4 Experiment 3 — Autoscaling Dynamics
 
-Enable autoscale (min 1, max 3). Ramp from 20 VUs → 200 VUs → 500 VUs → 20 VUs over ~34 minutes.
+Enable MIG Autoscaler (target CPU: 70%, bounds: 1–3). Execute a 34-minute staged load curve: 20 VUs → 150 VUs → 500 VUs → 20 VUs.
 
 **Key observations planned:**
-1. Time from CPU threshold breach to scale-out completion.
-2. Latency improvement after scale-out.
-3. Scale-in timing after load reduction.
-4. Impact of cooldown period.
+1. Scale-out reaction time following CPU threshold breach.
+2. Latency stabilization after new GCE instance joins the load balancer pool.
+3. Scale-in delay following traffic drop.
+4. Impact of the 300-second cool-down period in preventing termination flapping.
 
 ### 8.5 Experiment 4 — Fault Tolerance
 
-Deploy 2 instances. Stop Docker on one VM. Observe:
-- Health probe detection time.
-- Traffic rerouting to the healthy instance.
-- Recovery when the container restarts.
+Deploy 2 active GCE instances. Stop Docker on one instance (`docker stop myntraflash-app`). Observe:
+- Time elapsed until GCP Health Check marks node unhealthy (~30 seconds).
+- Seamless traffic rerouting to the remaining healthy instance with zero dropped requests.
+- Node recovery and automated traffic re-balancing when container is restarted.
 
-### 8.6 Experiment 5 — Cost Analysis
+### 8.6 Experiment 5 — Cost Analysis (Google Cloud Platform)
 
-Compare 24-hour cost for fixed (3 VMs) vs. elastic (1–3 VMs) provisioning:
+Compare 24-hour cost for fixed (3 VMs) vs. elastic (1–3 VMs) provisioning in GCP `asia-south1` (Mumbai):
 
-| Scenario | Estimated 24h Cost | VM-Hours |
-|----------|-------------------|----------|
-| Fixed (3 VMs always) | ~₹360 | 72 |
-| Elastic (1–3 VMs) | ~₹192 | 30 |
-| **Savings** | **~₹168 (~47%)** | **42 hours** |
+| Scenario | Estimated 24h Cost | VM-Hours | Out-of-Pocket Expense |
+|----------|-------------------|----------|-----------------------|
+| Fixed (3 GCE VMs always) | ~$3.53 USD (~₹295 INR) | 72 | **₹0.00** (covered by $300 credit) |
+| Elastic (1–3 GCE VMs MIG) | ~$2.05 USD (~₹171 INR) | 30 | **₹0.00** (covered by $300 credit) |
+| **Savings** | **~$1.48 USD (~41.8%)** | **42 hours saved** | **Zero student financial risk** |
 
-> These are estimates based on Azure Pricing Calculator assumptions. Actual costs will be measured in Week 3.
+> All costs are fully absorbed by GCP's $300 free trial credit. Actual charges will be verified via GCP Cloud Billing in Week 3.
 
 ---
 
@@ -510,41 +518,41 @@ Compare 24-hour cost for fixed (3 VMs) vs. elastic (1–3 VMs) provisioning:
 |----------------|--------|-------|---------|
 | Case-study research | **Lead** | Support | Support |
 | Source verification | **Lead** | — | — |
-| Production architecture | **Lead** | — | Support |
-| App requirements | Support | **Lead** | — |
-| Backend development | — | **Lead** | — |
-| Frontend development | — | **Lead** | — |
-| Docker implementation | — | **Lead** | Support |
-| Azure infrastructure | — | — | **Lead** |
-| Autoscaling config | — | — | **Lead** |
-| Load testing | — | — | **Lead** |
-| Experimental execution | Support | Support | **Lead** |
-| Results analysis | **Lead** | Support | Support |
-| Week 2 report | **Lead** | Support | Support |
-| Week 4 final report | **Lead** | Support | Support |
-| Viva preparation | All | All | All |
+| Production architecture modeling | **Lead** | — | Support |
+| App requirements & API design | Support | **Lead** | — |
+| Express backend development | — | **Lead** | — |
+| Storefront UI development | — | **Lead** | — |
+| Docker container packaging & ghcr.io | — | **Lead** | Support |
+| GCP infrastructure provisioning (VPC, MIG) | — | — | **Lead** |
+| Cloud Load Balancer & Autoscaler config | — | — | **Lead** |
+| Grafana k6 load test scripting | — | — | **Lead** |
+| Experimental execution & telemetry | Support | Support | **Lead** |
+| Results analysis & latency curves | **Lead** | Support | Support |
+| Week 2 deliverable coordination | **Lead** | Support | Support |
+| Week 4 final report preparation | **Lead** | Support | Support |
+| Viva defense & demonstration | All (33%) | All (33%) | All (33%) |
 
 ### 9.2 Week 3 Timeline
 
 | Day | Activity | Owner |
 |-----|----------|-------|
-| Day 1–2 | Implement Node.js application and Docker | Ritul |
-| Day 2–3 | Provision Azure infrastructure | Divyesh |
-| Day 3 | Deploy application to VMSS | Divyesh + Ritul |
-| Day 4 | Run Experiments 1–3 | Divyesh |
-| Day 5 | Run Experiments 4–5 | Divyesh |
-| Day 5–6 | Analyse results | All |
-| Day 6–7 | Document findings | Utsker |
+| Day 1–2 | Implement stateless Node.js application and Docker container | Ritul |
+| Day 2–3 | Provision GCP infrastructure (VPC, Subnet, Firewall, Template, MIG, LB) | Divyesh |
+| Day 3 | Deploy application container to MIG via startup script | Divyesh + Ritul |
+| Day 4 | Execute Experiments 1, 2, and 4 (Static load benchmarks & fault tolerance) | Divyesh |
+| Day 5 | Execute Experiment 3 (Dynamic flash-sale autoscaling & hysteresis) | Divyesh |
+| Day 5–6 | Execute Experiment 5 (GCP Cloud Billing analysis & statistical synthesis) | All |
+| Day 6–7 | Document Week 3 empirical findings and latency graphs | Utsker |
 
 ### 9.3 Risks and Mitigation
 
 | Risk | Mitigation |
 |------|------------|
-| Azure spending limits | Use student subscription; set budget alerts |
-| Autoscaling doesn't trigger | Lower CPU threshold (50%); increase k6 load |
-| Application bugs | Test locally with Docker before Azure deployment |
-| Insufficient k6 capacity | Run k6 from Azure VM in same region |
-| Time pressure | Prioritize Experiments 1–3; defer 4–5 if needed |
+| Unintended cloud billing | GCP has a strict **zero auto-charge** guarantee; set $10 budget alert; terminate resources post-test |
+| Autoscaler fails to trigger | Calibrate computation in `/api/discount` to ensure 150 VUs drive single-node CPU > 70% |
+| Container startup stalls | Verify GHCR repository is public; embed fallback health script in GCE template |
+| Client test runner bottleneck | Execute k6 from a dedicated local workstation or adjacent GCE micro-VM in the same region |
+| Time pressure in Week 3 | Prioritize Experiments 1–3; Experiments 4–5 are pre-scripted |
 
 ---
 
@@ -552,39 +560,36 @@ Compare 24-hour cost for fixed (3 VMs) vs. elastic (1–3 VMs) provisioning:
 
 ### 10.1 Expected Learning Outcomes
 
-1. **Practical cloud deployment**: Hands-on experience with Azure VMSS, Load Balancer and Monitor.
-2. **Horizontal scaling**: Measured evidence of performance improvement with additional instances.
-3. **Autoscaling**: Understanding of CPU-based triggers, cooldowns and scaling dynamics.
-4. **Fault tolerance**: Demonstration of health-probe-based traffic rerouting.
-5. **Cost optimization**: Quantified comparison of fixed vs. elastic provisioning.
+1. **Practical cloud deployment**: Hands-on mastery of Google Compute Engine (GCE), Managed Instance Groups (MIG), and Cloud Load Balancing.
+2. **Horizontal scaling linearity**: Measured empirical proof of tail-latency reduction (p95/p99) through horizontal instance replication.
+3. **Autoscaling dynamics**: Deep understanding of target metric evaluation, provisioning delay, cool-down periods, and anti-flapping hysteresis.
+4. **Resilient self-healing**: Practical demonstration of automated health check probing and zero-downtime traffic rerouting.
+5. **Cloud cost optimization**: Concrete mathematical and billing proof that elastic autoscaling achieves ~42% operational savings over static over-provisioning.
 
 ### 10.2 Evaluation Metrics
 
 | Category | Metrics |
 |----------|---------|
 | Latency | Average, p50, p95, p99 response time (ms) |
-| Throughput | Requests per second |
-| Reliability | Error rate (%) |
-| Scalability | Latency vs. instance count curve |
-| Autoscaling | Scale-out/in event timing and CPU correlation |
-| Cost | VM-hours, total cost (₹) for fixed vs. elastic |
+| Throughput | Requests per second (RPS) |
+| Reliability | HTTP error rate (%) and dropped request count |
+| Scalability | Latency vs. instance count curve (1, 2, 3 VMs) |
+| Autoscaling | Scale-out/scale-in timestamps, provisioning lag, and CPU correlation |
+| Cost | GCE VM-hours, network egress, and total cost ($/₹) for fixed vs. elastic |
 
 ### 10.3 Limitations
 
-1. **Scale difference**: Our exercise uses 1–3 VMs; Myntra uses thousands of service instances. Results demonstrate principles, not production-scale performance.
-2. **Simplified workload**: MyntraFlash uses in-memory data and simulated computation; Myntra has distributed databases, real ML models and complex service dependencies.
-3. **No data architecture**: The exercise does not implement Kafka, Bifrost, or a feature store. These systems require dedicated infrastructure.
-4. **Single region**: The exercise deploys in one Azure region; Myntra uses multi-region DR.
-5. **Burstable VMs**: Standard_B2s VMs use CPU credits and may throttle under sustained high load, unlike production-grade compute.
-6. **Network effects**: Load testing from a single machine does not replicate the geographic distribution of real users.
+1. **Scale difference**: Our laboratory exercise evaluates 1–3 GCE VMs; Myntra operates thousands of production container pods. Results prove architectural principles, not production throughput.
+2. **Simplified workload**: MyntraFlash uses in-memory mock data and synthetic CPU loops; Myntra coordinates distributed databases, streaming pipelines, and real ML models.
+3. **No data pipeline**: The exercise does not deploy Kafka, Bifrost, or Aerospike clusters, which require dedicated multi-node clusters.
+4. **Single region**: The exercise deploys in GCP `asia-south1` (Mumbai); Myntra employs active multi-region disaster recovery.
+5. **Network effects**: Testing from a single test machine does not replicate multi-ISP mobile network latency across pan-Indian consumer devices.
 
 ### 10.4 Conclusion
 
-Myntra's architecture demonstrates how cloud elasticity, distributed event processing, resilient infrastructure and low-latency caching work together to support flash-sale traffic while delivering personalized recommendations. The documented improvements — 5× discount-service latency reduction, 10× feature-lookup improvement, 35% data infrastructure cost savings — represent specific, verifiable outcomes across individual subsystems.
+Myntra's engineering evolution demonstrates that scaling for e-commerce flash sales is fundamentally an architectural challenge, not merely a compute-provisioning exercise. Sub-millisecond personalization, 20× flash-sale resilience, and 35% data cost efficiencies were unlocked through the deliberate convergence of cloud-native elasticity, distributed streaming ingestion (Sourcerer & Kafka), near-real-time event computation (Quicksilver & Janus), unified lakehouses (Bifrost & Delta Lake), and ultra-low-latency feature serving (Aerospike).
 
-Our MyntraFlash exercise distils these principles into a practical, measurable demonstration. By deploying a stateless application on Azure VMSS with load balancing and autoscaling, then subjecting it to simulated flash-sale traffic, we can directly measure the latency, throughput and cost implications of elastic versus fixed infrastructure — the same fundamental trade-off that drove Myntra's cloud migration.
-
-The experimental plan provides a structured methodology for the five planned experiments, with clearly defined variables, metrics and expected outcomes. Week 3 will execute these experiments and produce the measured results that this Week 2 analysis has designed.
+Our MyntraFlash exercise translates these enterprise principles into a practical, measurable, and accessible laboratory simulation on Google Cloud Platform. By deploying a stateless microservice onto Compute Engine Managed Instance Groups with Cloud Load Balancing and metric-based autoscaling, we can directly measure the latency, throughput, resilience, and economic trade-offs of elastic versus fixed infrastructure. Supported by GCP's $300 free trial with zero auto-charge protection, Group 33 is fully equipped to execute Week 3 benchmarking with rigorous academic depth and zero out-of-pocket financial risk.
 
 ---
 
@@ -603,10 +608,12 @@ The experimental plan provides a structured methodology for the five planned exp
 | [V1] | Microsoft — Azure Migration | Myntra on Azure, 50% EORS order growth | Feb 2020 |
 | [V2] | Aerospike — Customer Case Study | Feature lookup 8.5→0.8 ms, 500K ops/sec | 2022–2023 |
 | [V3] | Databricks — Case Study / Summit | 35% lower data costs, 25% faster pipelines | 2023–2024 |
-| [A1] | Microsoft Learn — VMSS Overview | learn.microsoft.com/azure/virtual-machine-scale-sets | — |
-| [A2] | Microsoft Learn — Autoscale | learn.microsoft.com/azure/azure-monitor/autoscale | — |
-| [A3] | Microsoft Learn — Load Balancer | learn.microsoft.com/azure/load-balancer | — |
-| [A6] | Azure Pricing Calculator | azure.microsoft.com/pricing/calculator/ | — |
+| [G1] | Google Cloud — Compute Engine MIGs | cloud.google.com/compute/docs/instance-groups | — |
+| [G2] | Google Cloud — Autoscaling Groups | cloud.google.com/compute/docs/autoscaler | — |
+| [G3] | Google Cloud — Cloud Load Balancing | cloud.google.com/load-balancing/docs | — |
+| [G4] | Google Cloud — Health Checks | cloud.google.com/load-balancing/docs/health-checks | — |
+| [G5] | Google Cloud — Pricing Calculator | cloud.google.com/products/calculator | — |
+| [G6] | Google Cloud — Free Program ($300 Credit) | cloud.google.com/free/docs/free-cloud-features | — |
 | [L1] | Grafana k6 Documentation | k6.io/docs/using-k6/metrics/ | — |
 
 ---

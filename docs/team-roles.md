@@ -8,9 +8,9 @@
 
 | Member | Roll No. | Primary Role |
 |--------|----------|--------------|
-| Utsker Dhameliya | 202301083 | Research and Architecture |
-| Ritul Patel | 202301086 | Application Development |
-| Divyesh Vagh | 202301444 | Cloud Infrastructure |
+| Utsker Dhameliya | 202301083 | Research, Production Architecture & Case Study Lead |
+| Ritul Patel | 202301086 | Application Development, API Design & Docker Packaging |
+| Divyesh Vagh | 202301444 | Cloud Infrastructure, GCE MIG, Autoscaling & Load Testing |
 
 ---
 
@@ -20,18 +20,18 @@
 
 | Week | Responsibility |
 |------|---------------|
-| Week 2 | Myntra case-study research and source verification |
-| Week 2 | Production architecture documentation and diagram |
-| Week 2 | Week 2 report coordination and writing |
+| Week 2 | Myntra case-study research and primary source verification |
+| Week 2 | Production architecture documentation and Mermaid conceptual modeling |
+| Week 2 | Week 2 report coordination, academic writing, and DOCX/PDF formatting |
 | Week 3 | Research validation against experimental results |
-| Week 3 | Architecture comparison (Myntra vs. exercise) |
-| Week 4 | Final report compilation and review |
+| Week 3 | Architecture comparison (Myntra enterprise platform vs. laboratory model) |
+| Week 4 | Final report compilation, results synthesis, and review |
 
 **Deliverables owned:**
 - `docs/case-study-analysis.md`
 - `docs/case-study-architecture.md`
 - `docs/references.md`
-- Production architecture diagram
+- Production architecture diagrams (`.mmd`, `.svg`, `.png`)
 
 ---
 
@@ -39,17 +39,17 @@
 
 | Week | Responsibility |
 |------|---------------|
-| Week 2 | Application requirements and API design |
-| Week 2 | Node.js backend architecture planning |
-| Week 2 | Frontend design |
-| Week 3 | Node.js + Express implementation |
-| Week 3 | HTML/CSS/JS frontend implementation |
-| Week 3 | Dockerfile creation and container testing |
-| Week 3 | Push container image to GitHub Container Registry |
-| Week 4 | Application documentation |
+| Week 2 | Application requirements and REST API design |
+| Week 2 | Node.js + Express backend architecture planning |
+| Week 2 | Frontend interface design (HTML/CSS/JS) |
+| Week 3 | Node.js + Express stateless service implementation |
+| Week 3 | Frontend integration with simulated backend delays |
+| Week 3 | Multi-stage Dockerfile creation and local container testing |
+| Week 3 | Push container image to GitHub Container Registry (`ghcr.io`) |
+| Week 4 | Application documentation and code review |
 
 **Deliverables owned:**
-- `app/` directory (all application code)
+- `app/` directory (all application microservice source code)
 - `Dockerfile`
 - Application endpoint documentation
 
@@ -59,148 +59,137 @@
 
 | Week | Responsibility |
 |------|---------------|
-| Week 2 | Azure architecture design |
-| Week 2 | Deployment architecture diagram |
-| Week 2 | Exercise and experimental plan |
-| Week 3 | Azure resource provisioning (Resource Group, VNet, VMSS, LB) |
-| Week 3 | Autoscaling configuration |
-| Week 3 | Load testing (k6 scripts and execution) |
-| Week 3 | Metrics collection and monitoring |
-| Week 4 | Cost analysis and infrastructure documentation |
+| Week 2 | GCP cloud deployment architecture design |
+| Week 2 | Proposed implementation architecture diagrams (`.mmd`, `.svg`, `.png`) |
+| Week 2 | Week 3 exercise and experimental methodology plan |
+| Week 3 | GCP project setup, VPC networking, firewall rules, and health checks |
+| Week 3 | GCE Instance Template and Managed Instance Group (MIG) provisioning |
+| Week 3 | Cloud Load Balancing (External Application LB) and MIG Autoscaler configuration |
+| Week 3 | Load testing execution using Grafana k6 (5 experiments) |
+| Week 3 | Telemetry collection via Google Cloud Monitoring and Cloud Logging |
+| Week 4 | Empirical cost analysis, latency curves, and infrastructure documentation |
 
 **Deliverables owned:**
 - `docs/deployment-architecture.md`
 - `docs/exercise-plan.md`
-- `infra/` directory (deployment scripts, cloud-init)
-- `load-test/` directory (k6 scripts)
-- `results/` directory (experimental data)
-- Proposed architecture diagram
+- `infra/` directory (GCP `gcloud` provisioning scripts, startup scripts)
+- `load-test/` directory (Grafana k6 test scripts)
+- `results/` directory (experimental JSON outputs and telemetry logs)
+- Proposed architecture diagrams
 
 ---
 
 ## 3. Shared Responsibilities
 
-All three members share responsibility for the following activities:
+All three members share responsibility for the following core milestones:
 
 | Activity | Participants | Timing |
 |----------|-------------|--------|
-| Integration testing | All members | Week 3 |
-| Performance analysis | All members | Week 3 |
-| Results interpretation | All members | Week 3 |
-| Final report review | All members | Week 4 |
-| Viva preparation | All members | Week 5 |
-| Code review | All members | Week 3 |
-| Git repository maintenance | All members | Ongoing |
+| Cloud integration and endpoint verification | All members | Week 3 |
+| Experimental benchmarking and load testing | All members | Week 3 |
+| Statistical latency and throughput interpretation | All members | Week 3 |
+| Final report peer review and editorial polish | All members | Week 4 |
+| Final viva presentation and technical defense | All members (Equal 33% contribution) | Week 5 |
+| Code and pull request reviews | All members | Continuous |
+| Git repository maintenance and branch management | All members | Continuous |
 
 ---
 
 ## 4. Work Breakdown by Week
 
-### Week 2 (Current) — Case Analysis
+### Week 2 (Current) — Case Analysis & Planning
 
 | Task | Owner | Status |
 |------|-------|--------|
-| Complete Myntra case-study research | Utsker | ✅ Complete |
-| Document production architecture | Utsker | ✅ Complete |
-| Design proposed deployment architecture | Divyesh | ✅ Complete |
-| Define application requirements and endpoints | Ritul | ✅ Complete |
-| Write experimental plan | Divyesh | ✅ Complete |
-| Create architecture diagrams | Utsker + Divyesh | ✅ Complete |
-| Compile Week 2 report | All | ✅ Complete |
-| Assign team responsibilities | All | ✅ Complete |
+| Complete Myntra case-study research and auditing | Utsker | ✅ Complete |
+| Document production architecture (Sourcerer, Bifrost, Aerospike) | Utsker | ✅ Complete |
+| Design proposed GCP deployment architecture (MIG, Cloud LB) | Divyesh | ✅ Complete |
+| Define application requirements, endpoints, and stateless model | Ritul | ✅ Complete |
+| Author Week 3 experimental methodology (5 experiments) | Divyesh | ✅ Complete |
+| Render architecture diagrams (Mermaid, SVG, 250-DPI PNG) | Utsker + Divyesh | ✅ Complete |
+| Compile comprehensive Week 2 report (Markdown, DOCX, PDF) | All | ✅ Complete |
+| Assign team responsibilities and risk matrix | All | ✅ Complete |
 
 ### Week 3 (Planned) — Implementation and Experiments
 
 | Task | Owner | Dependencies |
 |------|-------|-------------|
-| Implement Node.js application | Ritul | Application requirements (Week 2) |
-| Create Dockerfile and test locally | Ritul | Application code |
-| Push image to GHCR | Ritul | Dockerfile |
-| Provision Azure infrastructure | Divyesh | Deployment architecture (Week 2) |
-| Configure VMSS and autoscaling | Divyesh | Azure infrastructure |
-| Deploy application to VMSS | Divyesh + Ritul | Container image + infrastructure |
-| Write k6 test scripts | Divyesh | Exercise plan (Week 2) |
-| Run Experiment 1 (Baseline) | Divyesh | Deployed application |
-| Run Experiment 2 (Horizontal scaling) | Divyesh | Baseline results |
-| Run Experiment 3 (Autoscaling) | Divyesh | Scaling infrastructure |
-| Run Experiment 4 (Fault tolerance) | Divyesh + Ritul | Multi-instance deployment |
-| Run Experiment 5 (Cost analysis) | Divyesh | All experiments |
-| Analyse results | All | Experimental data |
-| Document findings | Utsker | Analysis |
+| Implement stateless Node.js microservice | Ritul | Application requirements (Week 2) |
+| Create Dockerfile and test locally | Ritul | Microservice source code |
+| Tag and push container image to `ghcr.io` | Ritul | Local Docker testing |
+| Provision GCP infrastructure (VPC, Subnet, Firewall, Template) | Divyesh | Deployment architecture (Week 2) |
+| Create MIG, Health Check, and External Application Load Balancer | Divyesh | GCP networking and template |
+| Configure MIG Autoscaler (Target CPU 70%, Cool-down 300s) | Divyesh | Cloud Load Balancer and MIG |
+| Deploy container to MIG instances via startup script | Divyesh + Ritul | GHCR image + MIG template |
+| Author Grafana k6 load test scripts | Divyesh | Exercise plan (Week 2) |
+| Execute Experiment 1: Baseline Performance (1 VM) | Divyesh | Deployed application |
+| Execute Experiment 2: Horizontal Scaling (1 vs. 2 vs. 3 VMs) | Divyesh | Baseline metrics |
+| Execute Experiment 3: Autoscaling Dynamics & Hysteresis | Divyesh | Active MIG autoscaler |
+| Execute Experiment 4: Fault Tolerance & Health Probe Rerouting | Divyesh + Ritul | Multi-node MIG deployment |
+| Execute Experiment 5: Economic Cloud Cost Comparison | Divyesh + Utsker | All experimental data + GCP billing |
+| Aggregate and analyze empirical metrics | All | Experimental outputs |
+| Author Week 3 findings summary | Utsker | Analysis |
 
 ### Week 4 (Planned) — Final Report
 
 | Task | Owner | Dependencies |
 |------|-------|-------------|
-| Compile experimental results | Divyesh | Week 3 data |
-| Write results analysis section | Utsker | Compiled results |
-| Create visualizations (charts, tables) | All | Results analysis |
-| Write final report | Utsker | All sections |
-| Review and edit report | All | Draft report |
-| Prepare submission | All | Final report |
+| Compile experimental data and telemetry graphs | Divyesh | Week 3 results |
+| Write empirical results and statistical analysis section | Utsker | Compiled data |
+| Generate publication-ready latency curves and charts | All | Results analysis |
+| Author consolidated final report | Utsker | All project sections |
+| Perform technical review and proofreading | All | Draft final report |
+| Prepare submission package | All | Final report |
 
-### Week 5 (Planned) — Viva
+### Week 5 (Planned) — Viva & Demonstration
 
 | Task | Owner |
 |------|-------|
-| Prepare individual sections for presentation | Each member |
-| Practice viva Q&A | All |
-| Prepare demonstration (if required) | Divyesh + Ritul |
+| Prepare individual sections for technical presentation | Each member |
+| Conduct practice viva Q&A sessions | All |
+| Prepare live demonstration of GCP autoscaling and k6 tests | Divyesh + Ritul |
 
 ---
 
-## 5. Dependency Diagram
+## 5. Dependency Workflow
 
+```text
+Week 2 Research ──► Week 2 Report ──► Week 3 App Development (Node.js/Docker)
+         │                                               │
+         │                                               ▼
+         └──────► Week 3 GCP Infrastructure ──────► Deployment on MIG
+                                                         │
+                                                         ▼
+                                                 Load Testing (k6)
+                                                         │
+                                                         ▼
+                                                 Experiments 1–5
+                                                         │
+                                                         ▼
+                                                 Results Analysis
+                                                         │
+                                                         ▼
+                                                 Week 4 Final Report
+                                                         │
+                                                         ▼
+                                                 Week 5 Viva Defense
 ```
-Week 2 Research ──► Week 2 Report ──► Week 3 App Development
-         │                                     │
-         │                                     ▼
-         └──────► Week 3 Infrastructure ──► Deployment
-                                               │
-                                               ▼
-                                       Load Testing
-                                               │
-                                               ▼
-                                       Experiments 1–5
-                                               │
-                                               ▼
-                                       Results Analysis
-                                               │
-                                               ▼
-                                       Week 4 Report
-                                               │
-                                               ▼
-                                       Week 5 Viva
-```
 
 ---
 
-## 6. Communication and Coordination
+## 6. Risk Management Matrix
 
-| Channel | Purpose |
-|---------|---------|
-| GitHub Issues | Task tracking and bug reports |
-| GitHub Pull Requests | Code and document review |
-| WhatsApp / Team Chat | Daily coordination |
-| Weekly sync meeting | Progress review and blockers |
-
----
-
-## 7. Risk Matrix
-
-| Risk | Probability | Impact | Owner | Mitigation |
-|------|-------------|--------|-------|------------|
-| Azure subscription limits | Medium | High | Divyesh | Use student subscription; monitor spending daily |
-| Application bugs during testing | Medium | Medium | Ritul | Test locally before Azure deployment |
-| Autoscaling fails to trigger | Low | High | Divyesh | Lower CPU threshold; increase load intensity |
-| Team member unavailability | Low | Medium | All | Cross-training; documented procedures |
-| k6 unable to generate sufficient load | Low | Medium | Divyesh | Run k6 from Azure VM in same region |
-| Time constraints in Week 3 | Medium | High | All | Prioritize Experiments 1–3; defer 4–5 if needed |
-| GitHub Container Registry access issues | Low | Low | Ritul | Use public image; fallback to Docker Hub |
+| Identified Risk | Probability | Severity | Owner | Proactive Mitigation Strategy |
+|:---|:---:|:---:|:---:|:---|
+| **Cloud Billing Incurrence Post-Trial** | Low | High | Divyesh | GCP provides a strict **zero auto-charge** guarantee; set a $10 Cloud Billing budget alert; terminate all resources immediately after testing. |
+| **GCP Quota / Core Limits** | Low | Medium | Divyesh | `e2-medium` uses standard Compute Engine regional quotas (default: 24+ vCPUs in `asia-south1`), well within our 3-VM requirement (6 vCPUs). |
+| **Autoscaling Fails to Trigger Under Load** | Medium | High | Divyesh | Calibrate algorithmic work in `/api/discount` to ensure 150 VUs drive single-node CPU > 70%; verify via Cloud Monitoring. |
+| **Container Pull Stalls on Instance Boot** | Low | Medium | Ritul | Ensure GHCR container visibility is public; embed fallback health response in instance startup script. |
+| **Client Test Runner Bandwidth Limits** | Low | Medium | Divyesh | Execute k6 from a dedicated local workstation or adjacent GCE micro-VM in the same region. |
+| **Team Member Temporary Unavailability** | Low | Medium | All | Comprehensive cross-training; all infrastructure and deployment code committed to GitHub repository. |
 
 ---
 
 ## References
 
 See [references.md](references.md) for full citations.
-

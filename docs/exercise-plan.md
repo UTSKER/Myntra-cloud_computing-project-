@@ -1,4 +1,4 @@
-# Exercise and Experimental Plan — Week 3
+# Exercise and Experimental Plan — Week 3 (Google Cloud Platform)
 
 ## Cloud Computing — Group 33 | Week 2 Deliverable
 
@@ -6,368 +6,269 @@
 
 ## 1. Exercise Objective
 
-**MyntraFlash — Cloud-Based Scalable E-Commerce Simulation**
+**MyntraFlash — Cloud-Based Scalable E-Commerce Simulation on Google Cloud Platform**
 
-Build and deploy a small web application inspired by Myntra's e-commerce platform. Use the application to measure and compare cloud scalability under simulated flash-sale traffic conditions.
+Build and deploy a containerized web application inspired by Myntra's e-commerce architecture. Deploy the application onto **Google Cloud Platform (GCP)** within the `asia-south1` (Mumbai) region to measure, benchmark, and compare cloud scalability under simulated flash-sale traffic conditions.
 
-The exercise directly addresses the course requirements for measuring **latency**, **scaling behaviour** and **cost**.
+Following an audit of student billing mechanisms, the exercise is executed on GCP, taking advantage of **$300 USD in free trial credits over 90 days** with a strict **zero auto-charge guarantee**, bypassing institutional college email verification barriers while retaining 100% of the required architectural features.
+
+The experimental design directly addresses the course requirements for measuring:
+1. **Response Latency** (average, p50, p95, p99 percentiles).
+2. **Horizontal Scaling Behaviour** (throughput, instance count, CPU utilization).
+3. **Resilience & Fault Tolerance** (automated health probe detection and traffic rerouting).
+4. **Economic Cloud Cost** (comparative billing between fixed and elastic provisioning).
 
 ---
 
 ## 2. Deployment Procedure
 
-### Step 1: Application Development
+### Step 1: Application Development & Container Packaging
+1. Implement the stateless Node.js + Express microservice with all six functional endpoints.
+2. Author an optimized multi-stage `Dockerfile` (Node.js 18/20 Alpine base).
+3. Test container execution locally using `docker run -p 3000:3000 myntraflash:latest`.
+4. Tag and push the container image to GitHub Container Registry (`ghcr.io/utsker/myntraflash:latest`).
 
-1. Implement the Node.js + Express application with all six endpoints.
-2. Write a Dockerfile for containerization.
-3. Test locally with `docker build` and `docker run`.
-4. Push the image to GitHub Container Registry (`ghcr.io`).
+### Step 2: Google Cloud Platform Infrastructure Setup
+1. Create a dedicated GCP Project: `myntraflash-cloud-exercise`.
+2. Provision a custom VPC Network (`vpc-myntraflash`) and Subnet in `asia-south1` (Mumbai).
+3. Configure GCP Firewall Rules to permit external HTTP traffic (port 80) and Google Health Check IP ranges (`130.211.0.0/22`, `35.191.0.0/16`).
+4. Author an Instance Template (`template-myntraflash-v1`) utilizing `e2-medium` instances running Ubuntu 22.04 LTS with an automated Docker bootstrap startup script.
+5. Create a Compute Engine Managed Instance Group (MIG) with an initial baseline capacity of 1 instance.
+6. Configure an HTTP Health Check querying `/health` on port 80 at 15-second intervals.
+7. Deploy a Google Cloud External Application Load Balancer with a Backend Service linked to the MIG.
+8. Configure the MIG Autoscaler with a target CPU utilization of 70%, cool-down period of 300 seconds, and capacity bounds of 1 to 3 instances.
+9. Verify global reachability by querying the Load Balancer Public IPv4 address.
 
-### Step 2: Azure Infrastructure Setup
-
-1. Create resource group `rg-myntraflash-exercise` in Central India.
-2. Create a Virtual Network and subnet.
-3. Create a VM Scale Set with Standard_B2s VMs (min: 1, max: 3).
-4. Configure Custom Script Extension to install Docker and pull the container image.
-5. Create a Standard Load Balancer with health probes on `/health`.
-6. Configure autoscale rules (CPU-based).
-7. Verify the application is reachable via the load balancer public IP.
-
-### Step 3: Load Testing Setup
-
-1. Install Grafana k6 on the test machine.
-2. Write k6 test scripts for each experiment.
-3. Verify connectivity to the load balancer endpoint.
-4. Run a short validation test (10 VUs, 30 seconds) to confirm metrics collection.
+### Step 3: Synthetic Load Testing Setup
+1. Install Grafana k6 on the dedicated client workstation (or an adjacent test VM).
+2. Author modular k6 scenario scripts for each of the five planned experiments.
+3. Validate endpoint reachability and latency metric recording with a 10-VU sanity test.
 
 ---
 
-## 3. Experiments
+## 3. Experimental Methodology
 
 ### 3.1 Experiment 1 — Baseline Performance
 
-**Objective:** Establish baseline performance metrics for a single-instance deployment.
+**Objective:** Establish empirical baseline performance metrics for a single-instance deployment (`e2-medium`) under non-scaling, fixed-capacity conditions.
 
-**Setup:**
-- VMSS instance count: **1** (fixed, autoscaling disabled).
-- VM size: Standard_B2s (2 vCPU, 4 GB RAM).
-- Docker container: MyntraFlash application.
+**Infrastructure Configuration:**
+- GCE MIG Target Size: **1 Instance (Fixed)** (MIG autoscaling disabled).
+- Compute Specification: `e2-medium` (2 vCPU, 4 GB RAM, 30 GB standard persistent disk).
+- Runtime: Docker container running MyntraFlash.
+- Region: GCP `asia-south1` (Mumbai).
 
-**Load profile:**
-- 50 virtual users (VUs) sustained for 5 minutes.
-- Endpoint mix: 40% `/products`, 25% `/flash-sale`, 20% `/api/discount`, 15% `/api/recommend`.
+**Load Profile:**
+- Concurrency: 50 Virtual Users (VUs) sustained for 5 minutes.
+- Request Distribution: 40% `/products`, 25% `/flash-sale`, 20% `/api/discount`, 15% `/api/recommend`.
 
-**Metrics to record:**
+**Metrics Recorded:**
 
-| Metric | Description | Tool |
-|--------|-------------|------|
-| Average response time | Mean of all request durations | k6 |
-| p50 latency | Median request duration | k6 |
-| p95 latency | 95th percentile request duration | k6 |
-| p99 latency | 99th percentile request duration | k6 |
-| Requests per second | Throughput | k6 |
-| Error rate | Percentage of non-2xx responses | k6 |
-| CPU utilization | Average CPU % during test | Azure Monitor |
-| Memory utilization | Average memory % during test | Azure Monitor |
+| Evaluation Metric | Description | Primary Measurement Tool |
+|:---|:---|:---|
+| **Average Response Time** | Arithmetic mean of HTTP request durations | Grafana k6 (`http_req_duration`) |
+| **p50 Latency (Median)** | 50th percentile response time | Grafana k6 |
+| **p95 Tail Latency** | 95th percentile response time | Grafana k6 |
+| **p99 Worst-Case Latency** | 99th percentile response time | Grafana k6 |
+| **Throughput (RPS)** | Total completed requests per second | Grafana k6 (`http_reqs`) |
+| **Error Percentage** | Rate of non-2xx HTTP responses or timeouts | Grafana k6 (`http_req_failed`) |
+| **CPU Utilization** | Mean percentage CPU load across the VM | Google Cloud Monitoring |
+| **Memory Utilization** | RAM consumption during peak load | Google Cloud Monitoring |
 
-**Expected results template:**
+**Expected Outcome Template:**
 
-| Metric | 1 VM (Baseline) |
-|--------|-----------------|
-| Avg response time | _to be measured_ |
-| p50 latency | _to be measured_ |
-| p95 latency | _to be measured_ |
-| p99 latency | _to be measured_ |
-| Requests/sec | _to be measured_ |
-| Error rate (%) | _to be measured_ |
-| CPU utilization (%) | _to be measured_ |
-| Memory utilization (%) | _to be measured_ |
-
----
-
-### 3.2 Experiment 2 — Horizontal Scaling Comparison
-
-**Objective:** Compare performance across 1, 2 and 3 VM instances under identical load.
-
-**Setup:**
-- Three separate test runs with VMSS manually set to 1, 2 and 3 instances (autoscaling disabled).
-- Same VM size, Docker image, and Azure region for all runs.
-
-**Load profile (identical for all three runs):**
-- 100 VUs sustained for 5 minutes.
-- Same endpoint mix as Experiment 1.
-
-**Controlled variables:**
-
-| Variable | Value | Reason |
-|----------|-------|--------|
-| VM size | Standard_B2s | Identical compute per instance |
-| Docker image | Same tag | Identical application code |
-| Region | Central India | Same network conditions |
-| Test duration | 5 minutes | Consistent measurement window |
-| VU count | 100 | Same total load |
-| Endpoint mix | 40/25/20/15% | Same request profile |
-| k6 test machine | Same machine | Consistent client-side behaviour |
-
-**Comparison table:**
-
-| Metric | 1 VM | 2 VMs | 3 VMs |
-|--------|------|-------|-------|
-| Avg response time | _measured_ | _measured_ | _measured_ |
-| p50 latency | _measured_ | _measured_ | _measured_ |
-| p95 latency | _measured_ | _measured_ | _measured_ |
-| p99 latency | _measured_ | _measured_ | _measured_ |
-| Requests/sec | _measured_ | _measured_ | _measured_ |
-| Error rate (%) | _measured_ | _measured_ | _measured_ |
-| CPU utilization (%) | _measured_ | _measured_ | _measured_ |
-
-**Expected behaviour (hypothesis):**
-- Latency should decrease as instances increase (load distributed across more VMs).
-- Throughput (req/sec) should increase approximately linearly with instance count.
-- CPU utilization per instance should decrease as load is shared.
-- Error rate should decrease with more instances.
-
-**How to ensure fairness:**
-1. Wait at least 5 minutes between runs for metrics to stabilize.
-2. Verify all instances are healthy before starting each run.
-3. Use the same k6 script file for all runs.
-4. Record Azure Monitor metrics with matching time windows.
-5. Run tests at similar times of day to minimize network variability.
+| Metric | 1 GCE VM (`e2-medium`) Baseline |
+|:---|:---:|
+| Average Response Time (ms) | _to be measured in Week 3_ |
+| p50 Latency (ms) | _to be measured in Week 3_ |
+| p95 Latency (ms) | _to be measured in Week 3_ |
+| p99 Latency (ms) | _to be measured in Week 3_ |
+| Throughput (req/sec) | _to be measured in Week 3_ |
+| HTTP Error Rate (%) | _to be measured in Week 3_ |
+| Average CPU Utilization (%) | _to be measured in Week 3_ |
 
 ---
 
-### 3.3 Experiment 3 — Autoscaling Behaviour
+### 3.2 Experiment 2 — Horizontal Scaling Comparison (1 vs. 2 vs. 3 VMs)
 
-**Objective:** Observe and record autoscaling triggered by CPU utilization.
+**Objective:** Quantify horizontal scaling linearity and latency mitigation by evaluating identical synthetic traffic against static clusters of 1, 2, and 3 GCE instances.
 
-**Setup:**
-- VMSS autoscaling **enabled**.
-- Minimum instances: 1.
-- Maximum instances: 3.
-- Scale-out: CPU > 70% for 5 minutes → add 1 instance.
-- Scale-in: CPU < 30% for 5 minutes → remove 1 instance.
-- Cooldown: 5 minutes.
+**Infrastructure Configuration:**
+- Three discrete test executions with MIG capacity manually set to **1 VM**, **2 VMs**, and **3 VMs** (Autoscaler disabled).
+- All runs share the identical instance template, container image tag, VPC subnet, and load balancer frontend.
 
-**Load profile:**
+**Controlled Variables:**
 
-| Phase | Duration | VUs | Purpose |
-|-------|----------|-----|---------|
-| 1. Baseline | 3 min | 20 | Establish low CPU baseline |
-| 2. Ramp-up | 3 min | 20 → 200 | Gradually increase load |
-| 3. Sustained high | 10 min | 200 | Maintain high CPU to trigger scale-out |
-| 4. Peak spike | 5 min | 500 | Simulate flash-sale spike |
-| 5. Ramp-down | 3 min | 500 → 20 | Reduce load |
-| 6. Low traffic | 10 min | 20 | Maintain low CPU to trigger scale-in |
+| Variable | Controlled Value | Scientific Justification |
+|:---|:---|:---|
+| Compute Sizing | `e2-medium` (2 vCPU, 4 GB RAM) | Ensures uniform per-node compute power |
+| Container Image | `ghcr.io/utsker/myntraflash:latest` | Eliminates software version discrepancies |
+| Cloud Region | GCP `asia-south1` (Mumbai) | Eliminates geographic routing variations |
+| Test Duration | 5 minutes sustained per run | Provides statistically stable measurement intervals |
+| Client Load | 100 Virtual Users (VUs) | Sufficient to saturate 1 node while distributing across 3 |
+| Endpoint Mix | 40/25/20/15% ratio | Represents typical e-commerce browsing behavior |
+| Test Runner | Dedicated client machine | Eliminates test harness network divergence |
 
-**Total test duration:** ~34 minutes.
+**Comparative Evaluation Matrix:**
 
-**Metrics to record (time-series):**
+| Performance Metric | 1 GCE Instance | 2 GCE Instances | 3 GCE Instances |
+|:---|:---:|:---:|:---:|
+| Average Response Time (ms) | _measured_ | _measured_ | _measured_ |
+| p50 Latency (ms) | _measured_ | _measured_ | _measured_ |
+| p95 Latency (ms) | _measured_ | _measured_ | _measured_ |
+| p99 Latency (ms) | _measured_ | _measured_ | _measured_ |
+| Throughput (req/sec) | _measured_ | _measured_ | _measured_ |
+| Error Rate (%) | _measured_ | _measured_ | _measured_ |
+| Fleet Average CPU (%) | _measured_ | _measured_ | _measured_ |
 
-| Time (min) | VUs | Instance Count | Avg CPU (%) | Avg Latency (ms) | Req/sec | Errors |
-|------------|-----|----------------|-------------|-------------------|---------|--------|
+**Hypothesis:** As instance capacity triples from 1 to 3 VMs, tail latency (p95/p99) will drop significantly as CPU saturation on individual nodes is alleviated, and aggregate system throughput will scale near-linearly.
+
+---
+
+### 3.3 Experiment 3 — Autoscaling Dynamics & Hysteresis
+
+**Objective:** Observe, record, and evaluate autonomous horizontal elasticity triggered by Compute Engine CPU thresholds, measuring provisioning lag, scale-out responsiveness, and cool-down stabilization.
+
+**Autoscaler Configuration:**
+- Target Metric: **Average CPU Utilization = 70%**.
+- Minimum Replicas: **1 Instance**.
+- Maximum Replicas: **3 Instances**.
+- Cool-Down Period: **300 seconds (5 minutes)**.
+- Scale-In Control: Maximum reduction of 1 VM per 5 minutes to prevent termination flapping.
+
+**Dynamic Flash-Sale Load Profile (34-Minute Execution Window):**
+
+| Phase | Duration | Virtual Users (VUs) | Workload Objective |
+|:---|:---:|:---:|:---|
+| **Phase 1: Baseline** | 3 min | 20 VUs | Establish steady-state off-peak baseline (CPU ~20%) |
+| **Phase 2: Pre-Sale Ramp** | 3 min | 20 → 150 VUs | Simulate initial traffic surge as sale opens |
+| **Phase 3: Sustained Peak** | 10 min | 150 VUs | Force CPU > 70% to trigger first scale-out (1 → 2 VMs) |
+| **Phase 4: Flash Spike** | 5 min | 500 VUs | Simulate extreme peak flash demand; trigger second scale-out (2 → 3 VMs) |
+| **Phase 5: Post-Sale Decay**| 3 min | 500 → 20 VUs | Traffic drops abruptly as sale inventory exhausts |
+| **Phase 6: Cooldown & Decay**| 10 min | 20 VUs | Maintain low load (CPU < 30%) to evaluate cool-down and scale-in |
+
+**Time-Series Telemetry Table:**
+
+| Timestamp (min) | Target VUs | Active Instance Count | Fleet CPU (%) | Mean Latency (ms) | Throughput (RPS) | Error Count |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | 0 | 20 | 1 | _measured_ | _measured_ | _measured_ | _measured_ |
 | 3 | 50 | 1 | _measured_ | _measured_ | _measured_ | _measured_ |
-| 6 | 200 | 1 | _measured_ | _measured_ | _measured_ | _measured_ |
-| 11 | 200 | _measured_ | _measured_ | _measured_ | _measured_ | _measured_ |
-| 16 | 500 | _measured_ | _measured_ | _measured_ | _measured_ | _measured_ |
-| 21 | 200 | _measured_ | _measured_ | _measured_ | _measured_ | _measured_ |
-| 26 | 20 | _measured_ | _measured_ | _measured_ | _measured_ | _measured_ |
-| 34 | 20 | _measured_ | _measured_ | _measured_ | _measured_ | _measured_ |
+| 6 | 150 | 1 | _measured_ | _measured_ | _measured_ | _measured_ |
+| 11 | 150 | _observed_ | _measured_ | _measured_ | _measured_ | _measured_ |
+| 16 | 500 | _observed_ | _measured_ | _measured_ | _measured_ | _measured_ |
+| 21 | 150 | _observed_ | _measured_ | _measured_ | _measured_ | _measured_ |
+| 26 | 20 | _observed_ | _measured_ | _measured_ | _measured_ | _measured_ |
+| 34 | 20 | _observed_ | _measured_ | _measured_ | _measured_ | _measured_ |
 
-**Autoscaling event log:**
+**Autoscale Event Log Template:**
 
-| Time | Event | Previous Count | New Count | Trigger |
-|------|-------|----------------|-----------|---------|
-| _observed_ | Scale-out | _n_ | _n+1_ | CPU > 70% for 5 min |
-| _observed_ | Scale-out | _n_ | _n+1_ | CPU > 70% for 5 min |
-| _observed_ | Scale-in | _n_ | _n-1_ | CPU < 30% for 5 min |
-
-**Key observations to record:**
-1. How long after CPU exceeds 70% does the first scale-out occur?
-2. How long does a new instance take to become healthy and receive traffic?
-3. Does latency improve after scale-out?
-4. How long after load drops does scale-in begin?
-5. Are there any errors during scaling transitions?
-
-**Cooldown period explanation:**
-The 5-minute cooldown prevents rapid oscillation. After adding an instance, the system waits 5 minutes before evaluating again. This ensures:
-- The new instance has time to boot, pull the Docker image, and start serving traffic.
-- CPU metrics stabilize to reflect the new capacity.
-- Decisions are based on sustained trends, not transient spikes.
+| Event Timestamp | Action Type | Previous Size | New Target Size | Triggering Metric Condition | Provisioning Latency |
+|:---|:---:|:---:|:---:|:---|:---:|
+| _logged_ | Scale-Out | 1 | 2 | Fleet CPU > 70% sustained 5m | _measured (s)_ |
+| _logged_ | Scale-Out | 2 | 3 | Fleet CPU > 70% sustained 5m | _measured (s)_ |
+| _logged_ | Scale-In | 3 | 2 | Fleet CPU < 30% sustained 5m | _measured (s)_ |
 
 ---
 
-### 3.4 Experiment 4 — Fault Tolerance
+### 3.4 Experiment 4 — Fault Tolerance & Health Probe Rerouting
 
-**Objective:** Verify that the load balancer correctly routes traffic away from unhealthy instances.
+**Objective:** Verify that Google Cloud Load Balancing detects unhealthy or crashing microservice instances and transparently reroutes traffic to healthy instances without dropping client sessions.
 
-**Setup:**
-- VMSS instance count: 2 (fixed, autoscaling disabled).
-- Both instances healthy and serving traffic.
-- k6 running with 50 VUs sustained throughout.
+**Infrastructure Configuration:**
+- GCE MIG Target Size: **2 Instances (Fixed)**.
+- Both nodes active, healthy, and receiving traffic via round-robin.
+- Continuous background synthetic load: 50 VUs sustained.
 
 **Procedure:**
-
-1. **Phase 1 (2 min):** Verify both instances are receiving traffic. Use `/instance-id` endpoint to confirm requests are distributed.
-
-2. **Phase 2 — Simulate failure:** SSH into one VM instance and stop the Docker container:
+1. **Phase 1 (Verification, 2 min):** Confirm both instances actively serve traffic by querying `/instance-id`.
+2. **Phase 2 (Fault Injection):** SSH into GCE Instance 1 and forcefully kill the Docker container:
    ```bash
-   docker stop myntraflash
+   docker stop myntraflash-app
    ```
-
-3. **Phase 3 (2 min):** Continue the load test. Observe:
-   - Does the load balancer detect the unhealthy instance?
-   - How quickly is the unhealthy instance removed from rotation?
-   - Do requests continue to succeed on the remaining healthy instance?
-
-4. **Phase 4 — Recovery:** Restart the Docker container:
+3. **Phase 3 (Detection & Failover, 2 min):** Observe:
+   - Time elapsed until GCP Health Check fails (15s interval × 2 failures = ~30s).
+   - Load balancer marks Instance 1 as `UNHEALTHY` and removes it from backend rotation.
+   - 100% of incoming requests are routed to healthy Instance 2.
+4. **Phase 4 (Recovery):** Restart the container on Instance 1:
    ```bash
-   docker start myntraflash
+   docker start myntraflash-app
    ```
-
-5. **Phase 5 (2 min):** Observe whether the recovered instance is added back to the load balancer rotation.
-
-**Expected observations:**
-
-| Phase | Expected Behaviour |
-|-------|-------------------|
-| Phase 1 | Traffic distributed across both instances |
-| Phase 2 | Brief error spike (requests in-flight to failed instance) |
-| Phase 3 | All traffic routed to healthy instance; higher latency possible |
-| Phase 4 | Instance health probe succeeds after restart |
-| Phase 5 | Traffic redistributed across both instances |
-
-**Important distinction:**
-
-| Mechanism | What it does | When it acts |
-|-----------|-------------|-------------|
-| **Health probe** | Detects unhealthy instances and removes them from LB rotation | Seconds (probe interval × threshold) |
-| **VMSS automatic repair** | Replaces a failed VM entirely (new VM, new boot) | Minutes |
-
-In this experiment, we are primarily testing **health probe behaviour** (fast detection and traffic rerouting), not full VM replacement.
+5. **Phase 5 (Re-Entry, 2 min):** Verify that within 2 successful health checks, Instance 1 is restored to healthy rotation and traffic is re-balanced.
 
 ---
 
-### 3.5 Experiment 5 — Cost Analysis
+### 3.5 Experiment 5 — Economic Cloud Cost Analysis (Fixed vs. Elastic)
 
-**Objective:** Compare the cost of fixed provisioning versus elastic (autoscaled) provisioning.
+**Objective:** Quantify the financial return on investment (ROI) of autoscaling by modeling a 24-hour diurnal flash-sale traffic pattern comparing static peak capacity against dynamic elasticity on Google Cloud Platform.
 
-**Assumptions:**
-- Region: Central India.
-- VM size: Standard_B2s.
-- Duration: 24-hour analysis period.
-- Traffic pattern: 20 hours of low traffic + 4 hours of high traffic (simulating a flash sale).
+**Workload Model (24-Hour Cycle):**
+- **Off-Peak Baseline (20 hours):** Normal browsing demand satisfied by 1 VM (`e2-medium`).
+- **Pre-Sale & Ramp (2 hours):** Moderate surge requiring 2 VMs.
+- **Peak Flash Sale (2 hours):** Maximum concurrency requiring 3 VMs.
 
-**Scenario A — Fixed provisioning (3 VMs, always running):**
+**GCP Pricing Parameters (asia-south1 Mumbai Region, Pay-As-You-Go):**
+- Compute Engine `e2-medium` (2 vCPU, 4 GB RAM): **$0.0335 per hour** (~₹2.80/hr).
+- Standard Persistent Disk (30 GB `pd-standard`): **$0.040 per GB/month** (~$0.0016/hr per disk).
+- External Application Load Balancer: **$0.025 per hour** (first 5 forwarding rules).
+- Load Balancer Data Processed: **$0.008 per GB** (assuming 50 GB processed).
+- Cloud Monitoring Platform Metrics: **$0.000** (Included in GCP Free Tier).
+- **Free Trial Coverage:** All expenditures are charged against the **$300 USD credit**, resulting in **₹0 out-of-pocket cost**.
 
-| Resource | Unit | Quantity | Est. Unit Price | Est. 24h Cost |
-|----------|------|----------|-----------------|---------------|
-| Standard_B2s VM | per hour | 3 × 24 = 72 hrs | ~₹3.50/hr* | ~₹252 |
-| Standard LB | per hour | 24 hrs | ~₹1.70/hr* | ~₹41 |
-| LB rules | per rule/hr | 1 × 24 | Included | — |
-| OS disk (128 GB) | per disk/month | 3 disks (prorated) | ~₹350/month* | ~₹34 |
-| Data processed (LB) | per GB | ~5 GB | ~₹0.40/GB* | ~₹2 |
-| **Total (est.)** | | | | **~₹329** |
+**Comparative 24-Hour Cost Analysis:**
 
-**Scenario B — Elastic provisioning (1–3 VMs, autoscaled):**
-
-| Resource | Unit | Quantity | Est. Unit Price | Est. 24h Cost |
-|----------|------|----------|-----------------|---------------|
-| Standard_B2s VM (low) | per hour | 1 × 20 = 20 hrs | ~₹3.50/hr* | ~₹70 |
-| Standard_B2s VM (high) | per hour | 3 × 4 = 12 hrs | ~₹3.50/hr* | ~₹42 |
-| Standard LB | per hour | 24 hrs | ~₹1.70/hr* | ~₹41 |
-| OS disk (128 GB) | per disk/month | 1–3 disks (prorated) | ~₹350/month* | ~₹20 |
-| Data processed (LB) | per GB | ~5 GB | ~₹0.40/GB* | ~₹2 |
-| **Total (est.)** | | | | **~₹175** |
-
-> **\*Pricing note:** These are approximate estimates based on Azure pricing documentation. Actual prices vary by region, subscription type and current rates. Students should verify using the [Azure Pricing Calculator](https://azure.microsoft.com/en-us/pricing/calculator/) at the time of the experiment.
-
-**Estimated savings:**
-
-| Metric | Fixed | Elastic | Difference |
-|--------|-------|---------|------------|
-| VM hours | 72 | 32 | 40 hours saved (56%) |
-| Estimated cost | ~₹329 | ~₹175 | ~₹154 saved (~47%) |
-
-**Key insight:** Even with this simple setup, elastic provisioning can reduce compute costs by approximately 47% for a workload with 4 hours of peak demand in a 24-hour period. This directly mirrors Myntra's motivation for cloud migration — avoiding fixed peak-capacity provisioning.
-
-> **Disclaimer:** These are hypothetical cost estimates for planning purposes. Actual costs will be measured during the Week 3 exercise using real Azure billing data.
+| Cost Component | Architecture A: Fixed 3-VM Cluster | Architecture B: Elastic 1–3 VM MIG | Variance & Economic Savings |
+|:---|:---|:---|:---|
+| **Total VM-Hours** | 3 VMs × 24 hrs = **72.0 VM-hours** | (20×1) + (2×2) + (2×3) = **30.0 VM-hours** | **42.0 VM-hours eliminated (-58.3%)** |
+| **GCE Compute Cost** | 72.0 hrs × $0.0335 = **$2.412** | 30.0 hrs × $0.0335 = **$1.005** | **$1.407 saved on compute** |
+| **Persistent Boot Disk** | 3 disks × 24 hrs = **$0.118** | Dynamic disk allocation = **$0.049** | $0.069 saved on storage |
+| **Cloud Load Balancer** | 24 hrs × $0.0250 = **$0.600** | 24 hrs × $0.0250 = **$0.600** | Baseline ingress routing charge |
+| **Data Processing (50GB)**| 50 GB × $0.0080 = **$0.400** | 50 GB × $0.0080 = **$0.400** | Equivalent payload transfer charge |
+| **Cloud Monitoring** | $0.000 (Included) | $0.000 (Included) | $0.000 |
+| **Total 24-Hour Cost** | **$3.530 USD** (~ ₹295 INR) | **$2.054 USD** (~ ₹171 INR) | **41.8% Net Overall Cost Reduction** |
+| **30-Day Monthly Projection**| **$105.90 USD** (~ ₹8,842 INR) | **$61.62 USD** (~ ₹5,145 INR) | **₹3,697 INR Monthly Operational Savings** |
+| **Student Out-of-Pocket** | **₹0.00** (Deducted from $300 credit) | **₹0.00** (Deducted from $300 credit) | **Zero out-of-pocket cost** |
 
 ---
 
-## 4. Data Collection Plan
+## 4. Telemetry Collection & Results Organization
 
-### 4.1 k6 Output
+All experimental runs will be archived in the repository under `results/`:
 
-All k6 test runs should be executed with JSON output:
-
-```bash
-k6 run --out json=results/experiment-N-result.json test-script.js
-```
-
-Additionally, k6 summary output should be captured:
-
-```bash
-k6 run test-script.js | tee results/experiment-N-summary.txt
-```
-
-### 4.2 Azure Monitor
-
-For each experiment, record:
-- CPU utilization time-series (1-minute granularity).
-- Instance count changes (from Activity Log).
-- Screenshot or export of Azure Monitor dashboards.
-
-### 4.3 Results Organization
-
-```
+```text
 results/
 ├── experiment-1-baseline/
 │   ├── k6-summary.txt
-│   ├── k6-results.json
-│   └── azure-metrics-screenshot.png
+│   ├── k6-raw-results.json
+│   └── gcp-monitoring-cpu.png
 ├── experiment-2-horizontal/
-│   ├── 1vm/
-│   ├── 2vm/
-│   └── 3vm/
+│   ├── 1vm-summary.txt
+│   ├── 2vm-summary.txt
+│   ├── 3vm-summary.txt
+│   └── scaling-comparison-chart.png
 ├── experiment-3-autoscaling/
-│   ├── k6-summary.txt
-│   ├── autoscale-events.txt
-│   └── azure-metrics-screenshot.png
+│   ├── k6-staged-summary.txt
+│   ├── mig-autoscale-events.json
+│   └── gcp-autoscale-timeline.png
 ├── experiment-4-fault-tolerance/
-│   └── ...
+│   ├── failover-k6-metrics.json
+│   └── health-check-log.txt
 └── experiment-5-cost/
-    └── cost-comparison.md
+    └── gcp-billing-export.md
 ```
 
 ---
 
-## 5. Success Criteria
+## 5. Risk Management & Safeguards
 
-| Experiment | Success Criterion |
-|------------|-------------------|
-| 1. Baseline | Metrics collected with < 5% error rate |
-| 2. Horizontal | Clear latency improvement with more instances |
-| 3. Autoscaling | At least one scale-out and one scale-in observed |
-| 4. Fault tolerance | Traffic continues after instance failure |
-| 5. Cost | Cost difference quantified with real Azure billing |
-
----
-
-## 6. Risk Mitigation
-
-| Risk | Mitigation |
-|------|------------|
-| Azure free-tier limits | Use student subscription; monitor spending |
-| Autoscaling takes too long to trigger | Lower the CPU threshold (e.g., 50%) or increase load |
-| k6 machine bandwidth limits | Run k6 from an Azure VM in the same region |
-| Docker pull failures | Pre-pull images; use specific version tags |
-| Inconsistent test results | Run each experiment at least twice; report averages |
-| Time constraints | Prioritize Experiments 1–3; Experiments 4–5 are secondary |
+| Identified Risk | Impact | Proactive Mitigation Strategy |
+|:---|:---:|:---|
+| **Accidental Billing Post-Trial** | High | GCP has a strict **zero auto-charge** policy. Furthermore, we set a $10 budget alert in GCP Cloud Billing. |
+| **MIG Scale-Out Delayed** | Medium | Set initial-delay to 120s; test container images pre-cached on GHCR; aggressive 150 VU load ramp. |
+| **Load Balancer Health Check Fails** | High | Firewall explicitly permits GCP health check probe CIDRs (`130.211.0.0/22`, `35.191.0.0/16`) to port 80. |
+| **Client Test Runner Bottleneck** | Medium | Execute k6 from a dedicated local terminal with multi-threading enabled; monitor client CPU. |
 
 ---
 
 ## References
 
-See [references.md](references.md) for full citations.
-
+See [references.md](references.md) for full academic and cloud documentation citations.
