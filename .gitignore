@@ -1,0 +1,55 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment and secrets
+.env
+.env.*
+*.pem
+*.key
+*.crt
+*.p12
+
+# Node.js / frontend
+node_modules/
+.npm/
+.pnpm-store/
+coverage/
+dist/
+build/
+.cache/
+.next/
+.nuxt/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+env/
+.python-version
+
+# Azure / infrastructure
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+
+# Containers / local data
+logs/
+tmp/
+temp/
+*.sqlite
+*.db
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
