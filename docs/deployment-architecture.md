@@ -176,7 +176,101 @@ docker run -d \
 
 ---
 
-## 5. Network & Request Flow Architecture
+## 5. In-Depth System Architecture Diagram
+
+Below is the comprehensive architectural blueprint of the proposed **MyntraFlash** implementation on Google Cloud Platform, illustrating the end-to-end request lifecycle, zero-cost budget guardrails, compute auto-healing, and the internal microservice container architecture.
+
+![MyntraFlash Deep Cloud Architecture](diagrams/detailed-proposed-architecture.png)
+
+*Figure 2: In-Depth Google Cloud Platform Deployment & Microservice Container Architecture for MyntraFlash ([Vector SVG](diagrams/detailed-proposed-architecture.svg) | [Mermaid Source](diagrams/detailed-proposed-architecture.mmd)).*
+
+---
+
+## 6. Deep Architectural Layers & Zero-Cost Financial Engineering
+
+### 6.1 Layer 1: Synthetic Load Generation & Performance Testing Tier
+- **Tooling**: Grafana k6 (Go-based, highly efficient event-loop architecture).
+- **Placement**: Executed from a dedicated external testing workstation to prevent client-side CPU saturation from polluting network latency measurements.
+- **Traffic Profile (Multi-Stage Flash Simulation)**:
+  1. *Stage 1 (Warmup)*: 20 Virtual Users (VUs) for 1 minute (validates baseline latency).
+  2. *Stage 2 (Traffic Surge)*: Ramps from 20 to 150 VUs in 30 seconds (simulates the opening moments of Myntra EORS).
+  3. *Stage 3 (Sustained Peak)*: 150 VUs sustained for 5 minutes (saturates baseline capacity).
+  4. *Stage 4 (Flash Spike)*: Explosive burst to 500 VUs in 2 minutes (forces fleet CPU > 70% to trigger reactive autoscaling).
+  5. *Stage 5 (Cooldown & Recovery)*: Drops back to 20 VUs for 5 minutes (validates scale-in stabilization and anti-thrashing).
+- **Telemetry Extraction**: Live capture of Request Throughput (RPS), Latency Percentiles (P50, P90, P95, P99), and HTTP Error Rates (`http_req_failed` < 0.01%).
+
+### 6.2 Layer 2: Zero-Cost & Free-Tier Budget Guardrails ($0.00 Out-of-Pocket)
+The entire practical implementation is architected to guarantee **strictly zero financial cost ($0.00)** through five deliberate architectural decisions:
+1. **GCP $300 Free Trial Credit (90 Days)**: Every standard Google account receives $300 in credits without requiring university email domain approval. Crucially, GCP enforces a strict **Zero Auto-Charge Guarantee**—the platform stops serving rather than billing your credit card when credits expire unless manually upgraded.
+2. **Ephemeral Testing Windows**: GCE compute instances are spun up only during active 15–30 minute testing windows. A complete 5-stage k6 load test across 3 `e2-medium` instances consumes less than **$0.15 USD** of trial credit, leaving over $298.00 untouched.
+3. **Always-Free Tier Compatibility**: The design supports running on `e2-micro` instances (100% free under GCP Always-Free Tier), 30 GB standard persistent disks, and 50 GB/month of free Cloud Logging and Monitoring ingestion.
+4. **Stateless In-Memory Storage (Eliminating Managed DB Costs)**: Commercial managed databases (e.g., Cloud SQL or Cloud Spanner) cost $30–$300+/month. By maintaining pure statelessness with an in-memory catalog and simulated Redis cache, database licensing and hosting fees are **reduced to exactly $0.00**.
+5. **Free Public Container Registry**: Container images are hosted on GitHub Container Registry (`ghcr.io`), which provides unlimited free storage and bandwidth for public open-source project repositories.
+
+### 6.3 Layer 3: Traffic Management & Perimeter Security Layer
+- **Virtual Private Cloud (VPC)**: Isolated custom VPC (`vpc-myntraflash`: `10.0.1.0/24`) in region `asia-south1` (Mumbai).
+- **Firewall Rules**:
+  - `allow-http-80`: Allows inbound TCP traffic on port 80 from `0.0.0.0/0`.
+  - `allow-health-checks`: Explicitly permits GCP health check probes from Google IP ranges `35.191.0.0/16` and `130.211.0.0/22`.
+- **Google Cloud External Application Load Balancer**:
+  - Global / Regional External HTTP(S) Load Balancer acting as the single public entry point (Port 80).
+  - Forwarding Rule maps incoming requests to a Target HTTP Proxy and URL Map.
+  - Backend Service (`backend-myntraflash`) routes traffic using `UTILIZATION` balancing mode (Max: 80%).
+  - **Session Affinity**: Explicitly set to `None` to enforce pure round-robin hash distribution across all healthy instances.
+- **HTTP Health Checking Engine (`hc-myntraflash-http`)**:
+  - Periodically issues synthetic `GET /health` probes every 15 seconds.
+  - Marks an instance unhealthy after 2 consecutive failures (30s detection window), isolating failing VMs before cascading failure can propagate.
+
+### 6.4 Layer 4: Compute Engine Managed Instance Group (MIG)
+- **Instance Template (`template-myntraflash-v1`)**: Golden declarative blueprint specifying `e2-medium` (2 vCPU, 4 GB RAM) or `e2-micro` compute, Ubuntu 22.04 LTS Minimal OS, and 30 GB standard boot disk.
+- **Automated Bootstrapping**: A declarative bash startup script executes at VM creation: installs Docker Engine, pulls `ghcr.io/utsker/myntraflash:latest`, and runs the container with port mapping `80:3000`.
+- **Zonal Distribution**: Instances are distributed across `asia-south1-a` and `asia-south1-b` for intra-regional fault tolerance.
+- **Autoscaling Policy**:
+  - Target Metric: Fleet Average CPU Utilization exceeding **70%**.
+  - Minimum Capacity: 1 VM (baseline cost control).
+  - Maximum Capacity: 3 VMs (strict upper cost boundary).
+  - Scale-In Stabilization Window: **300 seconds (5 minutes)** to prevent metric flapping and thrashing during intermittent traffic dips.
+- **Auto-Healing Policy**: If an instance fails consecutive `/health` probes, the MIG automatically restarts or recreates the VM instance.
+
+### 6.5 Layer 5: Deep Internal Microservice Architecture (Inside Container)
+Each Docker container runs a lightweight, production-grade Node.js/Express service partitioned into four internal tiers:
+1. **Storefront Presentation Layer**:
+   - Express static file server delivering the single-page application (`index.html`, `style.css`, `app.js`).
+   - UI features a real-time **Serving VM Hostname & IP Badge** (dynamically proves round-robin load distribution during live refreshes), an active Flash Sale Countdown Timer, and a live client-side latency counter.
+2. **Middleware & Security Layer**:
+   - `helmet`: Enforces secure HTTP headers.
+   - `cors`: Cross-Origin Resource Sharing enablement for synthetic clients.
+   - `express.json()`: Body parsing.
+   - Request Logger & Sequence Counter: Tracks cumulative requests served per VM process.
+3. **Core REST API Controllers**:
+   - `GET /` & `GET /products`: Product catalogue browsing (JSON).
+   - `GET /flash-sale`: Time-critical deals catalog simulating high-demand flash items.
+   - `GET /api/discount`: Algorithmic discount engine that performs iterative cryptographic hash checks simulating CPU-bound pricing rules, safely exercising the GCP autoscaler.
+   - `GET /api/recommend`: Personalization mock simulating Aerospike feature-store retrieval delays.
+   - `GET /health`: Dedicated vitality check returning `HTTP 200 OK` (`{"status":"healthy"}`) in <5ms, completely isolated from business computation.
+   - `GET /instance-id`: Diagnostic endpoint returning OS hostname (`os.hostname()`), internal IP, uptime, and request count.
+4. **Stateless In-Memory Data Tier**:
+   - In-memory JavaScript data structures pre-seeded with catalog items.
+   - **Zero Disk Writes & Zero Server-Side Sessions**: Allows any instance to be terminated or spawned without data corruption.
+
+### 6.6 Layer 6: Cloud Observability & Telemetry Tier
+- **Google Cloud Monitoring**: Continuously aggregates time-series metrics:
+  - `compute.googleapis.com/instance/cpu/utilization`
+  - `loadbalancing.googleapis.com/https/request_count`
+  - `loadbalancing.googleapis.com/https/total_latencies`
+- **Google Cloud Logging**: Collects structured container stdout/stderr and HTTP access logs.
+
+### 6.7 Layer 7: Academic Data Science & SLA Verification Tier
+- **Analytics Pipeline (`analyze_results.py`)**: Automated Python script consuming raw k6 JSON/CSV logs and Cloud Monitoring exports.
+- **Visualization Artifacts**:
+  - *Figure 1*: Virtual Users (VUs) vs Active Instance Count over Time (demonstrating dynamic elasticity).
+  - *Figure 2*: Response Latency Percentiles (P50, P90, P95, P99) vs Request Throughput.
+  - *Figure 3*: Throughput (RPS) vs HTTP Error Rate (proving 0% 5xx errors during scale-out).
+- **Academic SLA Verification Table**: Quantifies compliance against latency (<100ms P95), error (<0.01%), and elasticity targets.
+
+---
+
+## 7. Network & Request Flow Architecture
 
 ```text
                   Grafana k6 (Synthetic Client Load)
@@ -210,7 +304,7 @@ docker run -d \
 
 ---
 
-## 6. Infrastructure Provisioning Script (`gcloud` CLI)
+## 8. Infrastructure Provisioning Script (`gcloud` CLI)
 
 The entire infrastructure can be deterministically provisioned using the official Google Cloud SDK (`gcloud`):
 
@@ -324,7 +418,7 @@ gcloud compute forwarding-rules describe $FORWARDING_RULE --global --format="val
 
 ---
 
-## 7. Comparison with Myntra Production Architecture
+## 9. Comparison with Myntra Production Architecture
 
 | Architectural Dimension | Myntra Production Platform | MyntraFlash Laboratory Model |
 |:---|:---|:---|
@@ -339,6 +433,6 @@ gcloud compute forwarding-rules describe $FORWARDING_RULE --global --format="val
 
 ---
 
-## 8. References
+## 10. References
 
 See [references.md](references.md) for full academic and cloud provider citations.

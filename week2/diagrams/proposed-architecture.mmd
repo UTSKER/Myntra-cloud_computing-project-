@@ -1,93 +1,175 @@
 %%{ init: { 'theme': 'base', 'themeVariables': { 'primaryColor': '#E8F0FE', 'primaryTextColor': '#1A73E8', 'primaryBorderColor': '#1967D2', 'lineColor': '#4285F4' } } }%%
-graph TB
-    subgraph LOADTEST["Load Testing Tier"]
-        K6["Grafana k6<br/>Load Generator"]
-        K6_STAGES["Execution Stages:<br/>1. Warmup: 20 VUs (1m)<br/>2. Flash Surge: 150 VUs (30s)<br/>3. Sustained Peak: 150 VUs (5m)<br/>4. Flash Spike: 500 VUs (2m)<br/>5. Cooldown: 20 VUs (5m)"]
+flowchart TB
+    subgraph CLIENT_TIER["1. Synthetic Load Generation & Performance Testing Tier"]
+        K6["Grafana k6 Load Engine<br/>(External Test Station)"]
+        K6_PROFILE["Staged Flash-Sale Traffic Profile:<br/>• Stage 1 (Warmup): 20 VUs (1m)<br/>• Stage 2 (Surge): 150 VUs (30s)<br/>• Stage 3 (Peak): 150 VUs (5m)<br/>• Stage 4 (Flash Spike): 500 VUs (2m)<br/>• Stage 5 (Cooldown): 20 VUs (5m)"]
+        K6_METRICS["Live Client Telemetry:<br/>• Request Rate (RPS)<br/>• Latencies: P50, P90, P95, P99<br/>• Error Percentage (Target: 0.00%)"]
+        K6 --- K6_PROFILE
+        K6 --- K6_METRICS
     end
 
-    subgraph GCP["Google Cloud Platform (GCP) — asia-south1 (Mumbai) Region"]
-        subgraph NETWORKING["Traffic Management Layer"]
-            GCLB["Google Cloud Load Balancing<br/>(External Application Load Balancer)"]
-            HC["HTTP Health Check<br/>GET /health:3000<br/>Interval: 15s | Threshold: 2"]
+    subgraph ZERO_COST_BANNER["★ Google Cloud Zero-Cost & Free-Tier Guardrail Strategy ($0.00 Out-of-Pocket)"]
+        ZC1["GCP $300 Free Trial Credit (90 Days, Zero Auto-Charge)"]
+        ZC2["Always-Free Tier Compatibility (e2-micro / 30GB PD / 50GB Logs)"]
+        ZC3["Ephemeral Test Windows (<$0.15 compute spend per experiment)"]
+        ZC4["In-Memory Stateless Design (Eliminates $30+/mo Cloud SQL Database Costs)"]
+    end
+
+    subgraph GCP_INFRA["2. Google Cloud Platform (GCP) Infrastructure Perimeter — asia-south1 (Mumbai) Region"]
+        subgraph NETWORKING["Traffic Management & Perimeter Security Layer"]
+            VPC["GCP VPC Network (vpc-myntraflash: 10.0.1.0/24)"]
+            FW["Cloud Firewall Rules:<br/>• allow-http-80 (0.0.0.0/0)<br/>• allow-health-checks (35.191.0.0/16, 130.211.0.0/22)"]
+            GCLB["Google Cloud External Application Load Balancer<br/>(Global / Regional IPv4 Frontend | Port 80)"]
+            URLMAP["URL Map & Target HTTP Proxy<br/>Routes Port 80 to Backend Service"]
+            BACKEND_SVC["Backend Service (backend-myntraflash)<br/>• Balancing Mode: Utilization (Target 80%)<br/>• Session Affinity: None (Round-Robin)"]
+            HC["HTTP Health Check Engine (hc-myntraflash-http)<br/>• Probe Path: GET /health | Port 80<br/>• Interval: 15s | Timeout: 5s<br/>• Unhealthy Threshold: 2 | Healthy Threshold: 2"]
+            
+            GCLB --> URLMAP --> BACKEND_SVC
+            BACKEND_SVC --- HC
+            VPC --- FW
         end
 
-        subgraph MIG_GROUP["Compute Engine Managed Instance Group (MIG)"]
-            direction LR
-            subgraph VM1["GCE VM 1 (e2-medium)"]
-                D1["Docker Container<br/>MyntraFlash App<br/>Node.js + Express"]
+        subgraph MIG_GROUP["Compute Engine Managed Instance Group (mig-myntraflash)"]
+            TEMPLATE["Instance Template (template-myntraflash-v1):<br/>• Machine Type: e2-medium (2 vCPU, 4GB RAM) / e2-micro<br/>• OS: Ubuntu 22.04 LTS Minimal | Disk: 30GB PD-Standard<br/>• Startup Script: Installs Docker & runs container"]
+            
+            subgraph VM1["GCE Instance 1 (Base Node: asia-south1-a)"]
+                D1["Docker Engine<br/>Container Port 80:3000"]
             end
-            subgraph VM2["GCE VM 2 (e2-medium)"]
-                D2["Docker Container<br/>MyntraFlash App<br/>Node.js + Express"]
+            subgraph VM2["GCE Instance 2 (Base Node: asia-south1-b)"]
+                D2["Docker Engine<br/>Container Port 80:3000"]
             end
-            subgraph VM3["GCE VM 3 (e2-medium)<br/>(Autoscaled)"]
-                D3["Docker Container<br/>MyntraFlash App<br/>Node.js + Express"]
+            subgraph VM3["GCE Instance 3 (Autoscaled Node: Dynamic)"]
+                D3["Docker Engine<br/>Container Port 80:3000"]
             end
+            
+            TEMPLATE -.->|"Spawns"| VM1
+            TEMPLATE -.->|"Spawns"| VM2
+            TEMPLATE -.->|"Autoscales"| VM3
         end
 
-        subgraph AUTOSCALE["Compute Engine MIG Autoscaler"]
-            RULES["Autoscaling Policy"]
-            SO["Scale-Out Trigger:<br/>Fleet Avg CPU > 70%<br/>Add 1 Instance"]
-            SI["Scale-In Control:<br/>Fleet Avg CPU < 30%<br/>Remove 1 Instance"]
-            COOL["Cool-Down Period: 300s (5m)<br/>Min: 1 Instance | Max: 3 Instances"]
-            RULES --- SO
-            RULES --- SI
-            RULES --- COOL
+        subgraph AUTOSCALE_ENGINE["Compute Engine MIG Autoscaler & Auto-healing Engine"]
+            AUTO_POL["Autoscaling Policy"]
+            TRIG_OUT["Scale-Out Trigger:<br/>Fleet Avg CPU > 70%<br/>Action: Add 1 VM (60s delay)"]
+            TRIG_IN["Scale-In Control:<br/>Fleet Avg CPU < 30%<br/>Action: Remove 1 VM"]
+            COOL_DOWN["Stabilization Window: 300s (5m)<br/>Min Capacity: 1 VM | Max Capacity: 3 VMs"]
+            HEAL["Auto-healing Policy:<br/>Replaces unresponsive VMs failing /health"]
+            AUTO_POL --- TRIG_OUT
+            AUTO_POL --- TRIG_IN
+            AUTO_POL --- COOL_DOWN
+            AUTO_POL --- HEAL
         end
 
-        subgraph MONITOR["Cloud Observability Layer"]
-            GCM["Google Cloud Monitoring<br/>& Cloud Logging"]
-            METRICS["Platform Telemetry:<br/>• compute/instance/cpu/utilization<br/>• loadbalancing/https/request_count<br/>• loadbalancing/https/total_latencies"]
+        subgraph OBSERVABILITY["Cloud Observability & Telemetry Layer"]
+            GCM["Google Cloud Monitoring & Cloud Logging"]
+            METRIC_CPU["Metric: compute.googleapis.com/instance/cpu/utilization"]
+            METRIC_REQ["Metric: loadbalancing.googleapis.com/https/request_count"]
+            METRIC_LAT["Metric: loadbalancing.googleapis.com/https/total_latencies"]
+            GCM --- METRIC_CPU
+            GCM --- METRIC_REQ
+            GCM --- METRIC_LAT
         end
 
-        subgraph REGISTRY["Artifact Registry"]
-            GHCR["GitHub Container<br/>Registry (ghcr.io)"]
+        subgraph REGISTRY_LAYER["Free Container Image Registry Tier"]
+            GHCR["GitHub Container Registry (ghcr.io/utsker/myntraflash:latest)<br/>• 100% Free Public OCI Image Registry<br/>• CI/CD automated multi-stage Docker build"]
         end
     end
 
-    subgraph APP_ENDPOINTS["MyntraFlash Application Endpoints"]
-        direction LR
-        E1["GET /products<br/>Product Catalogue"]
-        E2["GET /flash-sale<br/>Flash Sale Items"]
-        E3["GET /api/discount<br/>Discount Pricing API"]
-        E4["GET /api/recommend<br/>Recommendations API"]
-        E5["GET /health<br/>Health Check Probe"]
-        E6["GET /instance-id<br/>Node Metadata"]
+    subgraph APP_CONTAINER["3. Deep Internal Microservice Architecture (MyntraFlash Container)"]
+        subgraph UI_TIER["Storefront Presentation Layer"]
+            STATIC_SRV["Express Static Asset Server"]
+            UI_DASH["Interactive Storefront Web UI (index.html, style.css, app.js)"]
+            UI_BADGE["Live Serving VM Badge<br/>Displays Hostname & IP"]
+            UI_TIMER["Flash Sale Countdown Timer"]
+            UI_LAT["Live Client Latency Counter"]
+            STATIC_SRV --- UI_DASH
+            UI_DASH --- UI_BADGE
+            UI_DASH --- UI_TIMER
+            UI_DASH --- UI_LAT
+        end
+
+        subgraph MIDDLEWARE_TIER["Middleware & Security Layer"]
+            MW["Helmet Security + CORS + Express JSON Parser + Request Logger & Counter"]
+        end
+
+        subgraph API_TIER["Core REST API Controllers & Endpoints"]
+            direction TB
+            EP_STORE["GET / & GET /products<br/>Product Catalogue Browsing API"]
+            EP_FLASH["GET /flash-sale<br/>High-Velocity Flash Deals API"]
+            EP_DISC["GET /api/discount<br/>Algorithmic Pricing & Coupon Engine<br/>(Synthetic CPU-bound Hash Simulation)"]
+            EP_REC["GET /api/recommend<br/>Personalization & Feature Retrieval API<br/>(Simulates Aerospike Feature Store)"]
+            EP_HEALTH["GET /health<br/>Health Vitality Probe (HTTP 200 OK)<br/>(Sub-5ms response, isolated from load)"]
+            EP_INST["GET /instance-id<br/>Node Metadata Diagnostics API<br/>(Returns Hostname, IP, PID, Uptime, Req #)"]
+        end
+
+        subgraph DATA_TIER["Stateless In-Memory Data & Cache Layer ($0.00 DB Cost)"]
+            MEM_DATA["In-Memory Catalog & Flash Deals Store<br/>(Simulated Redis Cache — Zero Session Affinity)"]
+            CPU_LOAD_GEN["Synthetic CPU Load Generator<br/>(Configurable matrix calculation loop)"]
+        end
+
+        MW --> API_TIER
+        EP_STORE --- MEM_DATA
+        EP_FLASH --- MEM_DATA
+        EP_DISC --- CPU_LOAD_GEN
+        EP_REC --- MEM_DATA
     end
 
-    K6 -->|"Synthetic HTTP Requests"| GCLB
-    GCLB -->|"Round-Robin Distribution"| VM1
-    GCLB -->|"Round-Robin Distribution"| VM2
-    GCLB -->|"Round-Robin Distribution"| VM3
-    HC -->|"Poll Vitality"| D1
-    HC -->|"Poll Vitality"| D2
-    HC -->|"Poll Vitality"| D3
-    GCLB --- HC
-    GHCR -->|"Docker Pull via Startup Script"| VM1
-    GHCR -->|"Docker Pull via Startup Script"| VM2
-    GHCR -->|"Docker Pull via Startup Script"| VM3
-    GCM -->|"Target Metric Signal"| RULES
-    VM1 -->|"Export Telemetry"| GCM
-    VM2 -->|"Export Telemetry"| GCM
-    VM3 -->|"Export Telemetry"| GCM
-    D1 --- E1
-    D1 --- E2
-    D1 --- E3
-    D1 --- E4
-    D1 --- E5
-    D1 --- E6
+    subgraph RESULTS_TIER["4. Academic Data Science & SLA Verification Tier"]
+        PY_SCRIPT["Python Data Analytics Engine (analyze_results.py / Pandas)"]
+        FIG1["Figure 1: Virtual Users vs Instance Count over Time (Elasticity)"]
+        FIG2["Figure 2: Latency Percentiles (P50, P90, P95, P99) vs Throughput"]
+        FIG3["Figure 3: Throughput (RPS) vs HTTP Error Rate (0% 5xx)"]
+        SLA_TAB["Academic SLA Compliance Verification Table"]
+        PY_SCRIPT --- FIG1
+        PY_SCRIPT --- FIG2
+        PY_SCRIPT --- FIG3
+        PY_SCRIPT --- SLA_TAB
+    end
 
-    classDef loadtest fill:#FFF9C4,stroke:#F9A825,color:#F57F17
-    classDef lb fill:#E8F0FE,stroke:#1A73E8,color:#0D47A1
-    classDef vm fill:#E6F4EA,stroke:#137333,color:#0D652D
-    classDef autoscale fill:#FCE8E6,stroke:#C5221F,color:#B31412
-    classDef monitor fill:#F3E8FD,stroke:#7627BB,color:#5A1A9A
-    classDef registry fill:#E0F7FA,stroke:#00838F,color:#006064
-    classDef endpoints fill:#F8F9FA,stroke:#5F6368,color:#202124
+    %% Network Connections
+    K6 -->|"1. Staged Synthetic HTTP Traffic (Port 80)"| GCLB
+    BACKEND_SVC -->|"2a. Round-Robin Distribution"| VM1
+    BACKEND_SVC -->|"2b. Round-Robin Distribution"| VM2
+    BACKEND_SVC -->|"2c. Autoscaled Traffic Flow"| VM3
 
-    class K6,K6_STAGES loadtest
-    class GCLB,HC lb
-    class VM1,VM2,VM3,D1,D2,D3 vm
-    class RULES,SO,SI,COOL autoscale
-    class GCM,METRICS monitor
-    class GHCR registry
-    class E1,E2,E3,E4,E5,E6 endpoints
+    HC -->|"Health Probe: GET /health (15s)"| D1
+    HC -->|"Health Probe: GET /health (15s)"| D2
+    HC -->|"Health Probe: GET /health (15s)"| D3
+
+    GHCR -.->|"Docker Pull on VM Boot"| VM1
+    GHCR -.->|"Docker Pull on VM Boot"| VM2
+    GHCR -.->|"Docker Pull on VM Boot"| VM3
+
+    VM1 -->|"Export OS & Container Telemetry"| GCM
+    VM2 -->|"Export OS & Container Telemetry"| GCM
+    VM3 -->|"Export OS & Container Telemetry"| GCM
+
+    GCM -->|"Metric Signal: Fleet Avg CPU"| AUTO_POL
+    AUTO_POL -->|"Trigger Scale-Out (+1 VM)"| MIG_GROUP
+
+    D1 --- APP_CONTAINER
+    D2 --- APP_CONTAINER
+    D3 --- APP_CONTAINER
+
+    K6_METRICS -->|"Raw Metrics (CSV/JSON)"| PY_SCRIPT
+    GCM -->|"Exported Cloud Telemetry"| PY_SCRIPT
+
+    %% Styling Classes
+    classDef client fill:#FFF9C4,stroke:#F9A825,stroke-width:2px,color:#E65100;
+    classDef zeroCost fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#1B5E20;
+    classDef lb fill:#E1F5FE,stroke:#0288D1,stroke-width:2px,color:#01579B;
+    classDef compute fill:#E8EAF6,stroke:#3F51B5,stroke-width:2px,color:#1A237E;
+    classDef autoscale fill:#FFEBEE,stroke:#E53935,stroke-width:2px,color:#B71C1C;
+    classDef monitor fill:#F3E5F5,stroke:#8E24AA,stroke-width:2px,color:#4A148C;
+    classDef registry fill:#E0F2F1,stroke:#00897B,stroke-width:2px,color:#004D40;
+    classDef app fill:#FFF3E0,stroke:#FB8C00,stroke-width:2px,color:#E65100;
+    classDef results fill:#EDE7F6,stroke:#5E35B1,stroke-width:2px,color:#311B92;
+
+    class K6,K6_PROFILE,K6_METRICS client;
+    class ZC1,ZC2,ZC3,ZC4 zeroCost;
+    class GCLB,URLMAP,BACKEND_SVC,HC,VPC,FW lb;
+    class VM1,VM2,VM3,D1,D2,D3,TEMPLATE compute;
+    class AUTO_POL,TRIG_OUT,TRIG_IN,COOL_DOWN,HEAL autoscale;
+    class GCM,METRIC_CPU,METRIC_REQ,METRIC_LAT monitor;
+    class GHCR registry;
+    class STATIC_SRV,UI_DASH,UI_BADGE,UI_TIMER,UI_LAT,MW,EP_STORE,EP_FLASH,EP_DISC,EP_REC,EP_HEALTH,EP_INST,MEM_DATA,CPU_LOAD_GEN app;
+    class PY_SCRIPT,FIG1,FIG2,FIG3,SLA_TAB results;

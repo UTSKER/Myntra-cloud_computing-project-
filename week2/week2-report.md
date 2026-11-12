@@ -402,27 +402,19 @@ The application is completely stateless — no server-side sessions, no local fi
 - **Safe scale-in** (removing instances loses no user state).
 - **Simple fault tolerance** (any instance can handle any request).
 
-### 7.5 Proposed Architecture Diagram
+### 7.5 Proposed Implementation Architecture & Deep Container Topology
 
-```mermaid
-graph TB
-    K6["Grafana k6 Load Generator"] --> GCLB["Google Cloud Load Balancing (External App LB)"]
-    GCLB --> VM1["GCE VM 1 (e2-medium) — Docker: MyntraFlash"]
-    GCLB --> VM2["GCE VM 2 (e2-medium) — Docker: MyntraFlash"]
-    GCLB --> VM3["GCE VM 3 (e2-medium) — Docker: MyntraFlash (autoscaled)"]
-    HC["HTTP Health Check /health"] --> VM1
-    HC --> VM2
-    HC --> VM3
-    GCM["Google Cloud Monitoring"] --> RULES["MIG Autoscaler Rules"]
-    VM1 --> GCM
-    VM2 --> GCM
-    VM3 --> GCM
-    GHCR["GitHub Container Registry"] --> VM1
-    GHCR --> VM2
-    GHCR --> VM3
-```
+Below is the architectural diagram of the planned **MyntraFlash** cloud implementation on Google Cloud Platform (GCP). It illustrates the synthetic load generation tier, zero-cost budget guardrails, the GCP networking and managed compute perimeter in `asia-south1` (Mumbai), the deep internal microservice container architecture, and the automated cloud telemetry pipeline.
 
-*Mermaid source: `week2/diagrams/proposed-architecture.mmd`*
+![MyntraFlash In-Depth Implementation Architecture](diagrams/detailed-proposed-architecture.png)
+
+*Figure 2: In-Depth Google Cloud Platform Deployment & Microservice Container Architecture for MyntraFlash ([Vector SVG](diagrams/detailed-proposed-architecture.svg) | [Mermaid Source](diagrams/detailed-proposed-architecture.mmd)).*
+
+#### Architectural Highlights & Zero-Cost Financial Engineering:
+1. **Zero-Cost Budget Guarantee ($0.00 Expense)**: Built within GCP's **$300 Free Trial Credit (90 Days)** featuring a strict zero auto-charge guarantee. Running ephemeral test sessions (15–30 minutes) on 1 to 3 instances consumes less than **$0.15** of free credits total, eliminating student financial risk.
+2. **Stateless Microservice**: Eliminates managed database costs ($0.00 DB spend) by utilizing an in-memory catalog and simulated Redis cache with pure horizontal statelessness.
+3. **MIG Elasticity & Auto-Healing**: Managed Instance Group (MIG) configured with minimum 1 and maximum 3 instances, autoscaling reactively at **Fleet Average CPU > 70%** with a 300-second stabilization window to prevent metric flapping.
+4. **Internal Application Design**: Encapsulates Express static frontend (with live serving hostname badge), algorithmic CPU-intensive pricing rules (`/api/discount`), personalization feature scoring (`/api/recommend`), and sub-5ms health vitality checks (`/health`).
 
 ### 7.6 GCP Infrastructure Configuration
 
