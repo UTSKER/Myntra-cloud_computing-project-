@@ -1,0 +1,60 @@
+%%{ init: { 'theme': 'base', 'themeVariables': { 'primaryColor': '#E8F0FE', 'primaryTextColor': '#1A73E8', 'primaryBorderColor': '#1967D2', 'lineColor': '#4285F4', 'fontSize': '16px' } } }%%
+flowchart LR
+    %% 1. CLIENT
+    subgraph S1["1. TRAFFIC GENERATION"]
+        direction TB
+        C["👥 <b>500 Virtual Shoppers</b><br/><b>Grafana k6 Load Generator</b><br/><i>Simulating Myntra EORS Midnight Flash Surge</i>"]
+    end
+
+    %% 2. GATEWAY
+    subgraph S2["2. SMART CLOUD ENTRY"]
+        direction TB
+        LB["🌐 <b>Google Cloud Load Balancer</b><br/><i>Port 80 (Single Public IP)</i><br/>• Equal Round-Robin routing<br/>• Health check /health every 15s<br/>• Zero session affinity"]
+    end
+
+    %% 3. COMPUTE MIG
+    subgraph S3["3. ELASTIC WORKERS (GCP Mumbai MIG)"]
+        direction TB
+        VM1["🖥️ <b>Server 1 (Base)</b><br/>e2-medium | 🐳 Docker App<br/><i>Handling 50% normal traffic</i>"]
+        VM2["🖥️ <b>Server 2 (Base)</b><br/>e2-medium | 🐳 Docker App<br/><i>Handling 50% normal traffic</i>"]
+        VM3["🖥️ <b>Server 3 (Autoscaled)</b><br/>e2-medium | 🐳 Docker App<br/><i>⚡ Auto-spawned on 500 VU spike</i>"]
+    end
+
+    %% 4. APP INTERNALS
+    subgraph S4["4. INSIDE THE APP (Stateless Node.js)"]
+        direction TB
+        APP["📦 <b>MyntraFlash Microservice</b><br/>• 🎨 <b>Frontend:</b> Store UI + Hostname Badge<br/>• ⚡ <b>Catalog API:</b> GET /products<br/>• 🏷️ <b>Pricing Engine:</b> GET /api/discount (CPU Hash)<br/>• 🎯 <b>AI Mock:</b> GET /api/recommend<br/>• 💚 <b>Vitality:</b> GET /health (sub-5ms)<br/>• 💾 <b>In-Memory Store:</b> Zero DB Cost ($0.00)"]
+    end
+
+    %% 5. BRAIN
+    subgraph S5["5. THE AUTONOMOUS BRAIN"]
+        direction TB
+        AUTOSCALE["🧠 <b>Cloud Autoscaler & Monitoring</b><br/>• Tracks Fleet Average CPU %<br/>• <b>Scale-Out:</b> CPU > 70% ➔ +1 Server<br/>• <b>Scale-In:</b> CPU < 30% ➔ -1 Server<br/>• <b>Anti-Flapping:</b> 5 min cool-down window"]
+        ZEROCOST["💰 <b>Zero-Cost Guarantee:</b><br/>GCP $300 Credit (No Auto-Charge)<br/>+ Ephemeral runs (<$0.15 spend)"]
+        AUTOSCALE --- ZEROCOST
+    end
+
+    %% FLOW
+    C -->|"1. Flash Traffic"| LB
+    LB -->|"2a. Normal load"| VM1
+    LB -->|"2b. Normal load"| VM2
+    LB -.->|"2c. Spike load"| VM3
+
+    VM1 & VM2 & VM3 --- S4
+    VM1 & VM2 & VM3 -->|"3. Reports CPU %"| AUTOSCALE
+    AUTOSCALE ==>|"4. Scales out (+1 VM)"| VM3
+
+    %% STYLING
+    classDef client fill:#FEF3C7,stroke:#D97706,stroke-width:2px,color:#92400E;
+    classDef lb fill:#DBEAFE,stroke:#2563EB,stroke-width:2px,color:#1E40AF;
+    classDef vm fill:#DCFCE7,stroke:#16A34A,stroke-width:2px,color:#14532D;
+    classDef app fill:#FFEDD5,stroke:#EA580C,stroke-width:2px,color:#9A3412;
+    classDef brain fill:#F3E8FF,stroke:#9333EA,stroke-width:2px,color:#581C87;
+    classDef zc fill:#ECFDF5,stroke:#059669,stroke-width:2px,color:#065F46;
+
+    class C client;
+    class LB lb;
+    class VM1,VM2,VM3 vm;
+    class APP app;
+    class AUTOSCALE brain;
+    class ZEROCOST zc;
