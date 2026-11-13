@@ -189,8 +189,6 @@ fi
 # Create Global Forwarding Rule (Public Port 80)
 if ! gcloud compute forwarding-rules describe fwd-myntraflash --global &>/dev/null; then
   gcloud compute forwarding-rules create fwd-myntraflash \
-    --load-balancing-scheme=EXTERNAL \
-    --address-pools="" \
     --ports=80 \
     --target-http-proxy=proxy-myntraflash \
     --global
