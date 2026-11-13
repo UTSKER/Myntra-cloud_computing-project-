@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyntraFlash — Cloud-Scale Flash Sale Simulation</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Cloud Infrastructure Live Telemetry Bar -->
+  <div class="telemetry-bar" id="telemetryBar">
+    <div class="telemetry-container">
+      <div class="telemetry-item">
+        <span class="telemetry-status-dot pulse"></span>
+        <span class="telemetry-label">Cloud Deployment:</span>
+        <strong id="telemetryRegion">GCP asia-south1 (Mumbai)</strong>
+      </div>
+      <div class="telemetry-item">
+        <span class="telemetry-label">Served by VM Instance:</span>
+        <span class="instance-pill" id="telemetryHost">Connecting...</span>
+      </div>
+      <div class="telemetry-item">
+        <span class="telemetry-label">API Latency:</span>
+        <strong id="telemetryLatency">-- ms</strong>
+      </div>
+      <div class="telemetry-item">
+        <span class="telemetry-label">Cluster Status:</span>
+        <span class="status-badge live" id="telemetryStatus">HEALTHY</span>
+      </div>
+      <div class="telemetry-actions">
+        <button class="btn-refresh" id="btnRefreshNode" title="Query Load Balancer for Next VM Instance">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+          Probe LB
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Navigation Header -->
+  <header class="main-header">
+    <div class="header-container">
+      <div class="brand-group">
+        <div class="logo">
+          <span class="logo-m">M</span>
+          <span class="logo-text">Myntra<span class="logo-accent">Flash</span></span>
+        </div>
+        <span class="academic-badge">Cloud Computing | Group 33</span>
+      </div>
+
+      <nav class="nav-links">
+        <a href="#sale" class="nav-link active">MEN</a>
+        <a href="#sale" class="nav-link">WOMEN</a>
+        <a href="#sale" class="nav-link">KIDS</a>
+        <a href="#sale" class="nav-link">HOME & LIVING</a>
+        <a href="#sale" class="nav-link">BEAUTY</a>
+        <a href="#benchmarking" class="nav-link nav-highlight">STUDY TELEMETRY</a>
+      </nav>
+
+      <div class="header-search">
+        <input type="text" placeholder="Search for products, brands and more" disabled>
+      </div>
+
+      <div class="header-right">
+        <div class="order-counter-widget" title="Total flash-sale orders processed in this session">
+          <span class="counter-label">Total Orders</span>
+          <span class="counter-val" id="sessionOrderCount">0</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Flash-Sale Banner -->
+  <section class="flash-sale-hero" id="sale">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <div class="hero-tag">⚡ MYNTRA CLOUD CASE STUDY SIMULATION</div>
+      <h1 class="hero-title">END OF REASON SALE</h1>
+      <p class="hero-subtitle">50% — 80% OFF ON 500,000+ STYLES | 15–20× TRAFFIC SURGE SIMULATION</p>
+      
+      <!-- Live Countdown Clock -->
+      <div class="countdown-card">
+        <div class="countdown-title">FLASH SALE ENDS IN</div>
+        <div class="countdown-timer">
+          <div class="time-block">
+            <span class="time-num" id="cdHours">04</span>
+            <span class="time-label">HOURS</span>
+          </div>
+          <span class="time-colon">:</span>
+          <div class="time-block">
+            <span class="time-num" id="cdMinutes">28</span>
+            <span class="time-label">MINS</span>
+          </div>
+          <span class="time-colon">:</span>
+          <div class="time-block">
+            <span class="time-num" id="cdSeconds">45</span>
+            <span class="time-label">SECS</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Flash Deals & Real-Time Stock Catalog -->
+  <main class="main-content">
+    <div class="section-header">
+      <div>
+        <h2 class="section-title">Grand Flash Deals — Limited Inventory</h2>
+        <p class="section-desc">Every purchase triggers cryptographic verification and simulates high-concurrency order placement.</p>
+      </div>
+      <div class="filter-pills">
+        <span class="pill active">All Flash SKUs</span>
+        <span class="pill">Men</span>
+        <span class="pill">Women</span>
+        <span class="pill">Footwear</span>
+        <span class="pill">Accessories</span>
+      </div>
+    </div>
+
+    <!-- Product Grid -->
+    <div class="product-grid" id="productGrid">
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Connecting to backend instance on GCP...</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Cloud Benchmarking & Viva Demonstration Card -->
+  <section class="benchmarking-section" id="benchmarking">
+    <div class="benchmarking-container">
+      <div class="benchmarking-header">
+        <div>
+          <h3>Cloud Scaling & Load Balancing Demonstration Panel</h3>
+          <p>Designed for Week 3 experimental verification and Week 5 Viva defense.</p>
+        </div>
+        <div class="badge-mig">GCP Managed Instance Group (MIG)</div>
+      </div>
+
+      <div class="telemetry-grid">
+        <div class="metric-card">
+          <div class="metric-title">Active Response VM</div>
+          <div class="metric-value font-mono" id="bmHost">--</div>
+          <div class="metric-caption">Identifies the serving Compute Engine VM</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-title">Round-Trip Latency</div>
+          <div class="metric-value" id="bmLatency">-- ms</div>
+          <div class="metric-caption">Network + Synthetic CPU execution time</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-title">Target CPU Threshold</div>
+          <div class="metric-value text-accent">70%</div>
+          <div class="metric-caption">GCE MIG Autoscaler scale-out trigger</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-title">Cool-down Period</div>
+          <div class="metric-value">300s</div>
+          <div class="metric-caption">Anti-flapping hysteresis parameter</div>
+        </div>
+      </div>
+
+      <div class="test-controls">
+        <button class="btn-demo-trigger" id="btnSimulateOrder">
+          ⚡ Trigger Single Flash Order (POST /api/checkout)
+        </button>
+        <button class="btn-demo-secondary" id="btnTestDiscount">
+          🏷️ Test Discount Rules (GET /api/discount)
+        </button>
+        <button class="btn-demo-secondary" id="btnTestHealth">
+          🏥 Probe Health Check (GET /health)
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <div class="footer-container">
+      <div class="footer-col">
+        <h4>MyntraFlash Simulation</h4>
+        <p>Demonstrating horizontal autoscaling, Cloud Load Balancing, and metric hysteresis under simulated EORS flash-sale traffic on Google Cloud Platform.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Course Project Details</h4>
+        <p><strong>Course:</strong> Cloud Computing</p>
+        <p><strong>Group:</strong> 33</p>
+        <p><strong>Deployment:</strong> GCP <code>asia-south1</code> (Mumbai)</p>
+      </div>
+      <div class="footer-col">
+        <h4>Team Members</h4>
+        <p>• Utsker Dhameliya (202301083)</p>
+        <p>• Ritul Patel (202301086)</p>
+        <p>• Divyesh Vagh (202301444)</p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      &copy; 2026 Group 33 — Cloud Computing Practical Exercise. For academic and demonstration purposes only.
+    </div>
+  </footer>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,25 @@
+{
+  "name": "myntraflash",
+  "version": "1.0.0",
+  "description": "MyntraFlash - High-Scale Flash-Sale Simulation Microservice for Cloud Computing Case Study",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "cloud-computing",
+    "gcp",
+    "autoscaling",
+    "load-balancing",
+    "myntra",
+    "k6"
+  ],
+  "author": "Group 33 (Utsker Dhameliya, Ritul Patel, Divyesh Vagh)",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  }
+}
+
