@@ -66,6 +66,12 @@ apt-get install -y docker-ce docker-ce-cli containerd.io
 
 systemctl enable --now docker
 
+# Tune Linux network sockets & file descriptors for extreme concurrency (1M scale)
+sysctl -w net.core.somaxconn=65535
+sysctl -w net.ipv4.tcp_max_syn_backlog=65535
+sysctl -w net.ipv4.tcp_tw_reuse=1
+ulimit -n 65535
+
 # Configure gcloud credentials inside VM for Artifact Registry
 gcloud auth configure-docker asia-south1-docker.pkg.dev --quiet || true
 
@@ -123,14 +129,14 @@ gcloud compute instance-groups managed set-named-ports mig-myntraflash \
   --named-ports=http:80 \
   --zone="${ZONE}"
 
-# Configure Metric-Based Autoscaler (Target CPU: 70%, Range: 1 to 3 VMs, Cooldown: 300s)
-echo "📈 Configuring Compute Engine Autoscaler (Target CPU: 70%)..."
+# Configure Metric-Based Autoscaler (Target CPU: 60%, Range: 1 to 8 VMs, Fast Cooldown: 60s)
+echo "📈 Configuring High-Scale Compute Engine Autoscaler (Target CPU: 60%, Max: 8 VMs)..."
 gcloud compute instance-groups managed set-autoscaling mig-myntraflash \
   --zone="${ZONE}" \
   --min-num-replicas=1 \
-  --max-num-replicas=3 \
-  --target-cpu-utilization=0.70 \
-  --cool-down-period=300
+  --max-num-replicas=8 \
+  --target-cpu-utilization=0.60 \
+  --cool-down-period=60
 
 echo "✅ Autoscaler active on mig-myntraflash."
 

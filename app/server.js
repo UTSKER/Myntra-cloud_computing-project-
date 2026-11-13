@@ -17,21 +17,26 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const HOSTNAME = os.hostname();
 const REGION = process.env.GCP_REGION || 'asia-south1 (Mumbai)';
-const DEFAULT_CPU_ITERATIONS = parseInt(process.env.CPU_ITERATIONS, 10) || 12000;
+const DEFAULT_CPU_ITERATIONS = parseInt(process.env.CPU_ITERATIONS, 10) || 1200;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Lightweight request logging (omits /health to keep logs clean during frequent probes)
+// Sampled request logging to prevent stdout I/O bottlenecks during high-throughput flash floods
+let reqCounter = 0;
 app.use((req, res, next) => {
   if (req.path === '/health') return next();
+  reqCounter++;
+  const shouldLog = reqCounter % 50 === 0;
   const start = process.hrtime();
   res.on('finish', () => {
-    const diff = process.hrtime(start);
-    const durationMs = (diff[0] * 1e3 + diff[1] * 1e-6).toFixed(2);
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} ${res.statusCode} - ${durationMs}ms - [${HOSTNAME}]`);
+    if (shouldLog) {
+      const diff = process.hrtime(start);
+      const durationMs = (diff[0] * 1e3 + diff[1] * 1e-6).toFixed(2);
+      console.log(`[${new Date().toISOString()}] (Sampled 1/50) ${req.method} ${req.originalUrl} ${res.statusCode} - ${durationMs}ms - [${HOSTNAME}]`);
+    }
   });
   next();
 });
@@ -368,6 +373,10 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🏥 Health Check: http://localhost:${PORT}/health`);
   console.log('================================================================');
 });
+
+// Configure keep-alive timeout strictly greater than GCP Cloud Load Balancer (60s)
+server.keepAliveTimeout = 65000;
+server.headersTimeout = 66000;
 
 // Handle graceful shutdown for GCP MIG rolling replacement & auto-healing
 process.on('SIGTERM', () => {
