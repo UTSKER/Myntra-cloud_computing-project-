@@ -1,0 +1,132 @@
+[
+  {
+    "minute": 0,
+    "target_vu": 20,
+    "active_vms": 1,
+    "fleet_cpu_pct": 21.4,
+    "mean_latency_ms": 42.1,
+    "throughput_rps": 95.2,
+    "errors": 0,
+    "status": "Baseline steady state"
+  },
+  {
+    "minute": 3,
+    "target_vu": 50,
+    "active_vms": 1,
+    "fleet_cpu_pct": 46.8,
+    "mean_latency_ms": 78.5,
+    "throughput_rps": 232.0,
+    "errors": 0,
+    "status": "Pre-sale ramp begins"
+  },
+  {
+    "minute": 6,
+    "target_vu": 150,
+    "active_vms": 1,
+    "fleet_cpu_pct": 79.2,
+    "mean_latency_ms": 286.4,
+    "throughput_rps": 380.5,
+    "errors": 4,
+    "status": "Threshold breached (CPU > 70%)"
+  },
+  {
+    "minute": 8,
+    "target_vu": 150,
+    "active_vms": 1,
+    "fleet_cpu_pct": 84.5,
+    "mean_latency_ms": 310.2,
+    "throughput_rps": 392.1,
+    "errors": 12,
+    "status": "MIG Scale-Out initiated"
+  },
+  {
+    "minute": 10,
+    "target_vu": 150,
+    "active_vms": 2,
+    "fleet_cpu_pct": 49.3,
+    "mean_latency_ms": 134.8,
+    "throughput_rps": 564.2,
+    "errors": 0,
+    "status": "VM-2 healthy in LB pool; latency drops"
+  },
+  {
+    "minute": 13,
+    "target_vu": 150,
+    "active_vms": 2,
+    "fleet_cpu_pct": 48.6,
+    "mean_latency_ms": 132.0,
+    "throughput_rps": 568.0,
+    "errors": 0,
+    "status": "2-VM steady state"
+  },
+  {
+    "minute": 16,
+    "target_vu": 500,
+    "active_vms": 2,
+    "fleet_cpu_pct": 87.4,
+    "mean_latency_ms": 524.6,
+    "throughput_rps": 612.4,
+    "errors": 38,
+    "status": "Flash Spike; CPU > 70% triggered"
+  },
+  {
+    "minute": 18,
+    "target_vu": 500,
+    "active_vms": 2,
+    "fleet_cpu_pct": 89.1,
+    "mean_latency_ms": 558.0,
+    "throughput_rps": 620.0,
+    "errors": 45,
+    "status": "MIG Scale-Out to 3 VMs initiated"
+  },
+  {
+    "minute": 20,
+    "target_vu": 500,
+    "active_vms": 3,
+    "fleet_cpu_pct": 63.8,
+    "mean_latency_ms": 208.5,
+    "throughput_rps": 940.2,
+    "errors": 0,
+    "status": "VM-3 healthy in LB; throughput maxes at 940 rps"
+  },
+  {
+    "minute": 22,
+    "target_vu": 150,
+    "active_vms": 3,
+    "fleet_cpu_pct": 34.2,
+    "mean_latency_ms": 72.4,
+    "throughput_rps": 550.0,
+    "errors": 0,
+    "status": "Post-sale decay starts"
+  },
+  {
+    "minute": 24,
+    "target_vu": 20,
+    "active_vms": 3,
+    "fleet_cpu_pct": 14.8,
+    "mean_latency_ms": 38.6,
+    "throughput_rps": 94.0,
+    "errors": 0,
+    "status": "Traffic plummets; Cool-down timer begins (300s)"
+  },
+  {
+    "minute": 29,
+    "target_vu": 20,
+    "active_vms": 2,
+    "fleet_cpu_pct": 19.5,
+    "mean_latency_ms": 39.2,
+    "throughput_rps": 94.5,
+    "errors": 0,
+    "status": "Cooldown expired; Scale-in to 2 VMs"
+  },
+  {
+    "minute": 34,
+    "target_vu": 20,
+    "active_vms": 1,
+    "fleet_cpu_pct": 21.0,
+    "mean_latency_ms": 41.5,
+    "throughput_rps": 95.0,
+    "errors": 0,
+    "status": "Stabilization complete; Scale-in to 1 VM baseline"
+  }
+]

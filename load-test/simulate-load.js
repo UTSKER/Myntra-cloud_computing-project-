@@ -15,10 +15,12 @@
 const http = require('http');
 const https = require('https');
 const { URL } = require('url');
+const fs = require('fs');
 
 const TARGET_URL = process.argv[2] || process.env.TARGET_URL || 'http://localhost:3000';
 const CONCURRENCY = parseInt(process.argv[3] || '50', 10);
 const TOTAL_REQUESTS = parseInt(process.argv[4] || '1000', 10);
+const OUTPUT_JSON = process.argv[5] || null;
 
 const targetParsed = new URL(TARGET_URL);
 const isHttps = targetParsed.protocol === 'https:';
@@ -125,7 +127,8 @@ function executeRequest(workerId) {
 }
 
 function printProgress() {
-  if (completed % 100 === 0 || completed === TOTAL_REQUESTS) {
+  const logInterval = TOTAL_REQUESTS >= 50000 ? 1000 : (TOTAL_REQUESTS >= 5000 ? 500 : 100);
+  if (completed % logInterval === 0 || completed === TOTAL_REQUESTS) {
     const errorPct = completed > 0 ? ((errors / completed) * 100).toFixed(1) : 0;
     process.stdout.write(`\rProgress: [${completed}/${TOTAL_REQUESTS}] (${errorPct}% err, ${(completed / ((Date.now() - startTime) / 1000)).toFixed(0)} req/s)...`);
   }
@@ -177,6 +180,30 @@ async function main() {
     console.log(`   • Instance [${node}]: ${count} requests (${share}%)`);
   }
   console.log('================================================================\n');
+
+  if (OUTPUT_JSON) {
+    const report = {
+      targetUrl: TARGET_URL,
+      concurrency: CONCURRENCY,
+      totalRequestsPlanned: TOTAL_REQUESTS,
+      totalCompleted: completed,
+      failed: errors,
+      errorPercentage: parseFloat(errorPercentage),
+      totalDurationSeconds: parseFloat(totalTimeSec.toFixed(2)),
+      throughputRps: parseFloat(throughput),
+      latencyMs: {
+        avg: parseFloat(avgLatency),
+        p50: parseFloat(p50),
+        p90: parseFloat(p90),
+        p95: parseFloat(p95),
+        p99: parseFloat(p99)
+      },
+      nodeDistribution: nodeDistribution,
+      timestamp: new Date().toISOString()
+    };
+    fs.writeFileSync(OUTPUT_JSON, JSON.stringify(report, null, 2));
+    console.log(`📁 Telemetry JSON exported to: ${OUTPUT_JSON}`);
+  }
 }
 
 main();

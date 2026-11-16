@@ -1,0 +1,48 @@
+{
+  "workload_model_24hr": {
+    "off_peak_hours": 20,
+    "off_peak_vms": 1,
+    "pre_sale_ramp_hours": 2,
+    "pre_sale_vms": 2,
+    "peak_flash_hours": 2,
+    "peak_flash_vms": 3
+  },
+  "pricing_gcp_asia_south1_usd": {
+    "e2_medium_per_vm_hour": 0.0335,
+    "pd_standard_30gb_per_hour": 0.00164,
+    "load_balancer_forwarding_rule_per_hour": 0.025,
+    "data_processed_per_gb": 0.008,
+    "cloud_monitoring": 0.0
+  },
+  "comparison": {
+    "architecture_a_fixed_3_vms": {
+      "vm_hours": 72.0,
+      "compute_cost_usd": 2.412,
+      "storage_cost_usd": 0.118,
+      "load_balancer_cost_usd": 0.6,
+      "data_transfer_50gb_usd": 0.4,
+      "total_24hr_cost_usd": 3.53,
+      "monthly_projection_usd": 105.9,
+      "monthly_inr": 8842.65
+    },
+    "architecture_b_elastic_mig": {
+      "vm_hours": 30.0,
+      "compute_cost_usd": 1.005,
+      "storage_cost_usd": 0.049,
+      "load_balancer_cost_usd": 0.6,
+      "data_transfer_50gb_usd": 0.4,
+      "total_24hr_cost_usd": 2.054,
+      "monthly_projection_usd": 61.62,
+      "monthly_inr": 5145.27
+    },
+    "variance": {
+      "vm_hours_saved": 42.0,
+      "vm_hours_saved_pct": 58.33,
+      "daily_savings_usd": 1.476,
+      "monthly_savings_usd": 44.28,
+      "monthly_savings_inr": 3697.38,
+      "net_cost_reduction_pct": 41.81,
+      "student_out_of_pocket_usd": 0.0
+    }
+  }
+}

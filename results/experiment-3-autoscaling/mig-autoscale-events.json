@@ -1,0 +1,38 @@
+[
+  {
+    "timestamp": "00:07:45",
+    "action": "SCALE_OUT",
+    "trigger": "Fleet CPU 78.4% > 70% threshold",
+    "from_vms": 1,
+    "to_vms": 2,
+    "provisioning_lag_sec": 105,
+    "status": "SUCCESS"
+  },
+  {
+    "timestamp": "00:18:10",
+    "action": "SCALE_OUT",
+    "trigger": "Fleet CPU 88.2% > 70% threshold",
+    "from_vms": 2,
+    "to_vms": 3,
+    "provisioning_lag_sec": 110,
+    "status": "SUCCESS"
+  },
+  {
+    "timestamp": "00:29:05",
+    "action": "SCALE_IN",
+    "trigger": "Fleet CPU < 30% sustained across 300s cooldown",
+    "from_vms": 3,
+    "to_vms": 2,
+    "provisioning_lag_sec": 30,
+    "status": "SUCCESS"
+  },
+  {
+    "timestamp": "00:34:10",
+    "action": "SCALE_IN",
+    "trigger": "Fleet CPU < 30% sustained across 300s cooldown",
+    "from_vms": 2,
+    "to_vms": 1,
+    "provisioning_lag_sec": 28,
+    "status": "SUCCESS"
+  }
+]

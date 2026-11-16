@@ -1,0 +1,21 @@
+{
+  "targetUrl": "http://myntra.divyesh.site",
+  "concurrency": 20,
+  "totalRequestsPlanned": 1000,
+  "totalCompleted": 1019,
+  "failed": 4,
+  "errorPercentage": 0.39,
+  "totalDurationSeconds": 33.16,
+  "throughputRps": 30.73,
+  "latencyMs": {
+    "avg": 643.84,
+    "p50": 239.01,
+    "p90": 1825.46,
+    "p95": 2119.9,
+    "p99": 3629.8
+  },
+  "nodeDistribution": {
+    "170714b3957c": 1015
+  },
+  "timestamp": "2026-11-15T18:10:57.762Z"
+}
