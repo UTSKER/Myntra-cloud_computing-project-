@@ -58,8 +58,8 @@ For the practical laboratory simulation (**MyntraFlash**), the group deploys ont
 |---|---|---|---|
 | 1 | Find primary sources, extract architecture, cost and outcome data | One-page summary of sources and salient points | ✅ Complete |
 | 2 | Case analysis: architecture, problem, solution | 10-page report, exercise plan, team roles | ✅ Complete |
-| 3 | Build the exercise, run experiments, collect measurements | Results added to the report | 🔄 In Progress |
-| 4 | Report preparation | Final report submission | 📅 Planned |
+| 3 | Build the exercise, run experiments, collect measurements | Results added to the report (with Response Time vs Instance Count plot) | ✅ Complete |
+| 4 | Report preparation | Final report submission (`reports/final-report.pdf`) | ✅ Complete |
 | 5 | Project viva | Viva defense & demonstration | 📅 Planned |
 
 ## Week 1 summary

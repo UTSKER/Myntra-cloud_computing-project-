@@ -54,3 +54,10 @@ temp/
 .idea/
 *.swp
 *.swo
+
+*.py
+
+week5
+# results
+
+*.node_modules
