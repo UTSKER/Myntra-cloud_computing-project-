@@ -1,0 +1,14 @@
+=================================================================
+k6 BENCHMARK: 3 GCE VM(s) STATIC CLUSTER
+=================================================================
+Target Instances:       3x e2-medium
+Throughput:             785.6 req/sec
+Total Requests:         235,680
+Error Rate:             0.0%
+Fleet Average CPU:      36.1%
+Average Latency:        82.4 ms
+p50 (Median) Latency:   61.2 ms
+p95 Latency:            164.8 ms
+p99 Latency:            235.6 ms
+Traffic Distribution:   {'myntraflash-vm-1': 34.1, 'myntraflash-vm-2': 33.2, 'myntraflash-vm-3': 32.7}
+=================================================================

@@ -1,0 +1,15 @@
+=================================================================
+k6 EXECUTION SUMMARY: EXPERIMENT 1 - BASELINE PERFORMANCE
+Target: 1x GCE e2-medium (2 vCPU, 4GB RAM) in asia-south1
+=================================================================
+Execution Duration:     5m 0s (300 seconds)
+Virtual Users (VUs):    50 sustained
+Total Requests:         70,920
+Throughput:             236.4 req/sec
+Error Rate:             0.04% (28 failures)
+Average Latency:        142.6 ms
+p50 (Median) Latency:   98.4 ms
+p95 Latency:            284.1 ms
+p99 Latency:            412.5 ms
+Fleet CPU Utilization:  68.2%
+=================================================================

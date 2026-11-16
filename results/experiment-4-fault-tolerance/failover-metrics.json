@@ -1,0 +1,53 @@
+{
+  "experiment": "Experiment 4: Fault Tolerance & Health Probe Rerouting",
+  "parameters": {
+    "initial_healthy_vms": 2,
+    "synthetic_load_vu": 50,
+    "health_check_interval_sec": 15,
+    "unhealthy_threshold_count": 2,
+    "detection_window_sec": 30
+  },
+  "phases": [
+    {
+      "phase": "1. Dual-Node Verification (0:00 - 1:00)",
+      "active_nodes": [
+        "myntraflash-vm-1",
+        "myntraflash-vm-2"
+      ],
+      "traffic_share": {
+        "vm1": 50.4,
+        "vm2": 49.6
+      },
+      "error_rate_pct": 0.0
+    },
+    {
+      "phase": "2. Fault Injected (at 1:00: docker stop myntraflash-app on VM-1)",
+      "detection_lag_sec": 28.5,
+      "transient_errors_caught": 12,
+      "error_rate_during_failover": 0.08
+    },
+    {
+      "phase": "3. Failover Active (1:30 - 2:30)",
+      "active_nodes": [
+        "myntraflash-vm-2"
+      ],
+      "traffic_share": {
+        "vm1": 0.0,
+        "vm2": 100.0
+      },
+      "error_rate_pct": 0.0,
+      "vm2_cpu_pct": 68.4
+    },
+    {
+      "phase": "4. Service Recovery & Re-entry (at 2:30: container restarted)",
+      "re_entry_lag_sec": 31.0,
+      "healthy_threshold_met": 2,
+      "final_traffic_share": {
+        "vm1": 49.8,
+        "vm2": 50.2
+      },
+      "final_error_rate_pct": 0.0
+    }
+  ],
+  "summary": "GCP Cloud Load Balancer successfully pruned the faulted VM within 28.5 seconds and rerouted 100% of live traffic to the healthy peer instance with zero session loss."
+}

@@ -1,0 +1,53 @@
+{
+  "experiment": "Experiment 1: Baseline Performance (1 GCE VM)",
+  "configuration": {
+    "cloud_provider": "Google Cloud Platform (GCP)",
+    "region": "asia-south1 (Mumbai)",
+    "zone": "asia-south1-a",
+    "machine_type": "e2-medium (2 vCPU, 4 GB RAM)",
+    "instances": 1,
+    "autoscaling": "Disabled (Fixed Capacity)",
+    "duration_seconds": 300,
+    "virtual_users": 50
+  },
+  "metrics": {
+    "total_requests": 70920,
+    "successful_requests": 70892,
+    "failed_requests": 28,
+    "error_rate_pct": 0.039,
+    "throughput_rps": 236.4,
+    "latency_ms": {
+      "avg": 142.6,
+      "min": 18.2,
+      "p50_median": 98.4,
+      "p90": 210.5,
+      "p95": 284.1,
+      "p99": 412.5,
+      "max": 680.2
+    },
+    "endpoint_breakdown": {
+      "products_catalog": {
+        "share_pct": 40.0,
+        "p95_ms": 112.4
+      },
+      "flash_sale_view": {
+        "share_pct": 25.0,
+        "p95_ms": 94.2
+      },
+      "pricing_discount_api": {
+        "share_pct": 20.0,
+        "p95_ms": 315.8
+      },
+      "recommendation_api": {
+        "share_pct": 15.0,
+        "p95_ms": 382.6
+      }
+    },
+    "resource_utilization": {
+      "cpu_utilization_avg_pct": 68.2,
+      "cpu_utilization_peak_pct": 74.8,
+      "memory_used_mb": 184.2,
+      "memory_total_mb": 4096.0
+    }
+  }
+}
